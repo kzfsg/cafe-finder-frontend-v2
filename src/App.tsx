@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-import SearchBar from "./components/SearchBar";
+import Navbar from "./components/Navbar";
 
 function App() {
   const handleSearch = (query: string) => {
@@ -11,7 +11,7 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <SearchBar onSearch={handleSearch} />
+        <Navbar onSearch={handleSearch} />
       </header>
       <main className="app-content">
         <h1 className="tryst">nomadic</h1>
