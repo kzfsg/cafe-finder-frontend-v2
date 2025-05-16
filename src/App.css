@@ -1,0 +1,104 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  background-color: #F0F2F5;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+}
+
+.app-content {
+  flex: 1;
+  padding: 2rem;
+}
+/* headings */
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+  font-family: 'tryst';
+}
+
+/* body */
+body {
+  color: #929EAF;
+  background-color: #F0F2F5;
+  font-family: 'nunito';
+}
+
+/* fonts */
+@font-face {
+  font-family: tryst;
+  src: url('/fonts/Tryst-Regular.otf');
+}
+
+.tryst {
+  font-family: tryst;
+}
+
+@font-face {
+  font-family: nunito;
+  src: url('/fonts/Nunito-VariableFont_wght.ttf');
+}
+
+.nunito {
+  font-family: nunito;
+}
+
+@font-face {
+  font-family: nunitoItalic;
+  src: url('Nunito-Italic-VariableFont_wght.ttf');
+}
+
+.nunitoItalic {
+  font-family: nunitoItalic;
+}
+
+/* Search Bar Styles */
+.search-bar {
+  display: flex;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 500px;
+}
+
+.search-input {
+  flex-grow: 1;
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  font-size: 16px;
+  background-color: white;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #ccc;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Placeholder styling */
+.search-input::placeholder {
+  font-family: 'nunitoItalic';
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Search button styles removed */
