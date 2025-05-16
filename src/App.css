@@ -28,8 +28,7 @@
   align-items: center;
   padding: 1rem 2rem;
   width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .navbar-left, .navbar-center, .navbar-right {
@@ -38,17 +37,18 @@
 }
 
 .navbar-left {
-  flex: 1;
+  flex: 0 0 200px;
   justify-content: flex-start;
 }
 
 .navbar-center {
-  flex: 2;
+  flex: 1;
   justify-content: center;
+  max-width: 600px;
 }
 
 .navbar-right {
-  flex: 1;
+  flex: 0 0 200px;
   justify-content: flex-end;
   gap: 1rem;
 }
@@ -97,6 +97,9 @@
 .app-content {
   flex: 1;
   padding: 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 /* headings */
 h1, h2, h3, h4, h5, h6 {
@@ -144,12 +147,26 @@ body {
   display: flex;
   margin: 0 auto;
   width: 100%;
-  max-width: 500px;
+}
+
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #aaa;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .search-input {
   flex-grow: 1;
-  padding: 10px 15px;
+  padding: 10px 15px 10px 40px;
   border: 1px solid #ccc;
   border-radius: 20px;
   font-size: 16px;
