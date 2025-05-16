@@ -131,6 +131,18 @@
 h1, h2, h3, h4, h5, h6 {
   color: black;
   font-family: 'tryst';
+  margin-bottom: 0; /* Remove bottom margin from headings */
+}
+
+/* Title and subtitle styling */
+.app-content h1.tryst {
+  margin-bottom: 0;
+  line-height: 1;
+}
+
+.app-content p.nunitoItalic {
+  margin-top: 0;
+  margin-bottom: 30px; /* Space between the subtitle and the grid */
 }
 
 /* body */
