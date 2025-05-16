@@ -26,13 +26,12 @@ export default function Navbar({ onSearch }: NavbarProps) {
         </button>
         
         <button className="icon-button profile-button" aria-label="User profile">
-          {/* Example usage with no image (will show default) */}
-          {/* <ProfileAvatar username="John" /> */}
+          {/* Using default avatar */}
+          {/* <ProfileAvatar /> */}
           
-          {/* Uncomment below to test with an image */}
+          {/* Using custom image */}
           <ProfileAvatar 
             imageUrl="https://i.pravatar.cc/150?img=32" 
-            username="John" 
           />
         </button>
       </div>
