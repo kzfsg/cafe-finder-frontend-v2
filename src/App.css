@@ -26,9 +26,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 1rem;
   width: 100%;
-  margin: 0;
+  /* max-width: 1280px; */
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .navbar-left, .navbar-center, .navbar-right {
@@ -37,20 +39,23 @@
 }
 
 .navbar-left {
-  flex: 0 0 200px;
+  flex: 0 0 150px;
   justify-content: flex-start;
 }
 
 .navbar-center {
   flex: 1;
   justify-content: center;
-  max-width: 600px;
+  max-width: 500px;
+  margin: 0 10px;
 }
 
 .navbar-right {
-  flex: 0 0 200px;
+  flex: 0 0 150px;
   justify-content: flex-end;
   gap: 1rem;
+  display: flex;
+  align-items: center;
 }
 
 .logo {
@@ -68,6 +73,7 @@
   background: none;
   border: none;
   cursor: pointer;
+  min-width: 40px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -76,10 +82,23 @@
   justify-content: center;
   color: #555;
   transition: all 0.2s ease;
+  position: relative;
+  margin: 0 5px;
 }
 
 .icon-button:hover {
   background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.custom-icon {
+  width: 24px;
+  height: 24px;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover .custom-icon {
   color: #333;
 }
 
@@ -90,8 +109,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background-color: #e0e0e0;
-  color: #555;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.profile-image.loading {
+  opacity: 0;
+}
+
+.profile-image.loaded {
+  opacity: 1;
+}
+
+.default-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #4a6fa5, #6a8caf);
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  text-transform: uppercase;
 }
 
 .app-content {
