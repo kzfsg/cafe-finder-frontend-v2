@@ -292,6 +292,37 @@ body {
   }
 }
 
+/* Cafe Details Overlay */
+.cafe-details-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Cafe Details Wrapper - prevents clicks from closing when clicking on the details */
+.cafe-details-wrapper {
+  max-width: 90%;
+  max-height: 90vh;
+  display: flex;
+  justify-content: center;
+  border-radius: 16px;
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 /* Cafe Card Styles */
 .cafe-card {
   break-inside: avoid;

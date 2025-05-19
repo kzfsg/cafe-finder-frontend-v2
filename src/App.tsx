@@ -3,15 +3,26 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import MasonryGrid from "./components/MasonryGrid";
 import CafeCard from "./components/CafeCard";
-import { cafes } from "./data/cafes";
+import CafeDetails from "./components/CafeDetails";
+import { cafes, type Cafe } from "./data/cafes";
 
 function App() {
+  const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
     // Search logic here
   };
 
-  // Cafe data is now imported from './data/cafes'
+  const handleCafeClick = (cafe: Cafe) => {
+    setSelectedCafe(cafe);
+    document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedCafe(null);
+    document.body.style.overflow = 'auto'; // Re-enable scrolling
+  };
 
   return (
     <div className="app-container">
@@ -24,17 +35,32 @@ function App() {
         
         <MasonryGrid>
           {cafes.map(cafe => (
-            <CafeCard
-              key={cafe.id}
-              title={cafe.title}
-              image={cafe.image}
-              description={cafe.description}
-              hasWifi={cafe.hasWifi}
-              hasPower={cafe.hasPower}
-              upvotes={cafe.upvotes}
-            />
+            <div key={cafe.id} onClick={() => handleCafeClick(cafe)} style={{ cursor: 'pointer' }}>
+              <CafeCard
+                title={cafe.title}
+                image={cafe.image}
+                description={cafe.description}
+                hasWifi={cafe.hasWifi}
+                hasPower={cafe.hasPower}
+                upvotes={cafe.upvotes}
+              />
+            </div>
           ))}
         </MasonryGrid>
+
+        {selectedCafe && (
+          <div 
+            className="cafe-details-overlay"
+            onClick={handleCloseDetails}
+          >
+            <div 
+              className="cafe-details-wrapper" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CafeDetails cafe={selectedCafe} onClose={handleCloseDetails} />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
