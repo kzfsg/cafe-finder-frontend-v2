@@ -22,7 +22,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
       
       <div className="navbar-right">
         <button className="icon-button saved-button" aria-label="Saved cafes">
-          <img src="/icons/heart.svg" alt="Saved cafes" className="custom-icon" />
+          <img src="/icons/bookmark.svg" alt="Saved cafes" className="custom-icon" />
         </button>
         
         <button className="icon-button profile-button" aria-label="User profile">
