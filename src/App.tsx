@@ -45,7 +45,7 @@ function App() {
         <Navbar onSearch={handleSearch} />
       </header>
       <main className="app-content">
-        <h1 className="tryst">nomadic</h1>
+          <h1 className="tryst">nomadic</h1>
         <p className="nunitoItalic">work-friendly cafes.</p>
         
         <MasonryGrid>

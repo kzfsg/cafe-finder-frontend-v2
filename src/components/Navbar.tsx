@@ -12,6 +12,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
     <nav className="navbar"> 
       <div className="navbar-left">
         <div className="logo">
+          <img src="/favicon.svg" alt="Nomadic logo" className="logo-icon" />
           <span className="logo-text tryst">nomadic</span>
         </div>
       </div>
