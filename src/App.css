@@ -134,6 +134,11 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0; /* Remove bottom margin from headings */
 }
 
+/* Override for h3 in cafe cards */
+.cafe-card h3 {
+  font-size: 22px;
+}
+
 /* Title and subtitle styling */
 .app-content h1.tryst {
   margin-bottom: 0;
@@ -335,7 +340,7 @@ body {
 /* Cafe Card Styles */
 .cafe-card {
   break-inside: avoid;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   border-radius: 12px;
   overflow: hidden;
   background-color: white;
@@ -352,6 +357,21 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
+/* New cafe header with title and meta info */
+.cafe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.cafe-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Keep this for backward compatibility */
 .cafe-card-footer {
   display: flex;
   justify-content: space-between;
@@ -361,23 +381,23 @@ body {
 
 .cafe-amenities {
   display: flex;
-  gap: 12px;
+  gap: 6px;
 }
 
 .amenity {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background-color: #f5f5f5;
   transition: all 0.2s ease;
 }
 
 .amenity img {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   opacity: 0.7;
 }
 
@@ -405,15 +425,15 @@ body {
   padding: 4px 8px;
   background-color: #f5f5f5;
   border-radius: 16px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #666;
   transition: all 0.2s ease;
 }
 
 .upvote-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   color: #FF5722;
 }
 
@@ -437,15 +457,20 @@ body {
 }
 
 .cafe-title {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-family: 'tryst';
   color: #333;
+  flex: 1;
+  text-align: left;
+  line-height: 1;
+  font-size: 20px;
 }
 
 .cafe-description {
   margin: 0;
   color: #666;
   font-family: 'nunito';
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.3;
+  margin-top: 3px;
 }
