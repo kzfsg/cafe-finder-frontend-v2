@@ -20,7 +20,7 @@ function App() {
       </header>
       <main className="app-content">
         <h1 className="tryst">nomadic</h1>
-        <p className="nunitoItalic">cafes</p>
+        <p className="nunitoItalic">work-friendly cafes.</p>
         
         <MasonryGrid>
           {cafes.map(cafe => (
@@ -29,6 +29,9 @@ function App() {
               title={cafe.title}
               image={cafe.image}
               description={cafe.description}
+              hasWifi={cafe.hasWifi}
+              hasPower={cafe.hasPower}
+              upvotes={cafe.upvotes}
             />
           ))}
         </MasonryGrid>
