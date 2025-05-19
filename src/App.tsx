@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "./App.css";
 import Navbar from "./components/Navbar";
 import MasonryGrid from "./components/MasonryGrid";
@@ -8,6 +8,8 @@ import { cafes, type Cafe } from "./data/cafes";
 
 function App() {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const closeTimeoutRef = useRef<number | null>(null);
 
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
@@ -20,8 +22,21 @@ function App() {
   };
 
   const handleCloseDetails = () => {
-    setSelectedCafe(null);
-    document.body.style.overflow = 'auto'; // Re-enable scrolling
+    // Start the closing animation
+    setIsClosing(true);
+    
+    // Clear any existing timeout
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+    }
+    
+    // Set a timeout to actually remove the component after animation completes
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setSelectedCafe(null);
+      setIsClosing(false);
+      document.body.style.overflow = 'auto'; // Re-enable scrolling
+      closeTimeoutRef.current = null;
+    }, 250); // Match the animation duration (0.25s = 250ms)
   };
 
   return (
@@ -54,7 +69,7 @@ function App() {
             onClick={handleCloseDetails}
           >
             <div 
-              className="cafe-details-wrapper" 
+              className={`cafe-details-wrapper ${isClosing ? 'closing' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
               <CafeDetails cafe={selectedCafe} onClose={handleCloseDetails} />
