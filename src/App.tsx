@@ -1,15 +1,32 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import Navbar from "./components/Navbar";
 import MasonryGrid from "./components/MasonryGrid";
 import CafeCard from "./components/CafeCard";
 import CafeDetails from "./components/CafeDetails";
+import Login from "./components/auth/Login";
+import SignUp from "./components/auth/SignUp";
 import { cafes, type Cafe } from "./data/cafes";
+import authService from "./services/authService";
+
+// Protected route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = authService.isLoggedIn();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
 
 function App() {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const closeTimeoutRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    // Check if user is logged in when component mounts
+    const loggedIn = authService.isLoggedIn();
+    setIsLoggedIn(loggedIn);
+  }, []);
 
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
@@ -39,45 +56,58 @@ function App() {
     }, 250); // Match the animation duration (0.25s = 250ms)
   };
 
-  return (
-    <div className="app-container">
-      <header className="app-header">
-        <Navbar onSearch={handleSearch} />
-      </header>
-      <main className="app-content">
-          <h1 className="tryst">nomadic</h1>
-        <p className="nunitoItalic">work-friendly cafes.</p>
-        
-        <MasonryGrid>
-          {cafes.map(cafe => (
-            <div key={cafe.id} onClick={() => handleCafeClick(cafe)} style={{ cursor: 'pointer' }}>
-              <CafeCard
-                title={cafe.title}
-                image={cafe.image}
-                description={cafe.description}
-                hasWifi={cafe.hasWifi}
-                hasPower={cafe.hasPower}
-                upvotes={cafe.upvotes}
-              />
-            </div>
-          ))}
-        </MasonryGrid>
-
-        {selectedCafe && (
-          <div 
-            className="cafe-details-overlay"
-            onClick={handleCloseDetails}
-          >
-            <div 
-              className={`cafe-details-wrapper ${isClosing ? 'closing' : ''}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <CafeDetails cafe={selectedCafe} onClose={handleCloseDetails} />
-            </div>
+  // Home page component with cafe listings
+  const HomePage = () => (
+    <>
+      <h1 className="tryst">nomadic</h1>
+      <p className="nunitoItalic">work-friendly cafes.</p>
+      
+      <MasonryGrid>
+        {cafes.map(cafe => (
+          <div key={cafe.id} onClick={() => handleCafeClick(cafe)} style={{ cursor: 'pointer' }}>
+            <CafeCard
+              title={cafe.title}
+              image={cafe.image}
+              description={cafe.description}
+              hasWifi={cafe.hasWifi}
+              hasPower={cafe.hasPower}
+              upvotes={cafe.upvotes}
+            />
           </div>
-        )}
-      </main>
-    </div>
+        ))}
+      </MasonryGrid>
+
+      {selectedCafe && (
+        <div 
+          className="cafe-details-overlay"
+          onClick={handleCloseDetails}
+        >
+          <div 
+            className={`cafe-details-wrapper ${isClosing ? 'closing' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CafeDetails cafe={selectedCafe} onClose={handleCloseDetails} />
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <Router>
+      <div className="app-container">
+        <header className="app-header">
+          <Navbar onSearch={handleSearch} />
+        </header>
+        <main className="app-content">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/" element={<HomePage />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 

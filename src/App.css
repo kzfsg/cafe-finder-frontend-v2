@@ -65,6 +65,12 @@
   padding: 5px;
 }
 
+.logo-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
 .logo-icon {
   width: 22px;
   height: 22px;
@@ -97,6 +103,110 @@
 .icon-button:hover {
   background-color: rgba(0, 0, 0, 0.05);
   color: #333;
+}
+
+/* Auth navigation buttons */
+.auth-buttons {
+  display: flex;
+  gap: 10px;
+  margin-left: 10px;
+}
+
+.auth-nav-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: 'nunito';
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.login-button {
+  color: #FF5722;
+  border: 1px solid #FF5722;
+  background-color: transparent;
+}
+
+.login-button:hover {
+  background-color: rgba(255, 87, 34, 0.1);
+}
+
+.signup-button {
+  color: white;
+  background-color: #FF5722;
+  border: 1px solid #FF5722;
+}
+
+.signup-button:hover {
+  background-color: #E64A19;
+  border-color: #E64A19;
+}
+
+/* User dropdown menu */
+.user-menu-container {
+  position: relative;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 12px 0;
+  margin-top: 8px;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.user-menu-container:hover .user-dropdown {
+  display: flex;
+}
+
+.user-greeting {
+  padding: 8px 16px;
+  font-family: 'nunito';
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  font-family: 'nunito';
+  color: #555;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: block;
+  width: 100%;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.dropdown-item.logout {
+  color: #FF5722;
+  border-top: 1px solid #eee;
+  margin-top: 8px;
+}
+
+.dropdown-item.logout:hover {
+  background-color: #FFF3F0;
 }
 
 .custom-icon {
