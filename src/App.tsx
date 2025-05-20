@@ -64,16 +64,17 @@ function App() {
       
       <MasonryGrid>
         {cafes.map(cafe => (
-          <div key={cafe.id} onClick={() => handleCafeClick(cafe)} style={{ cursor: 'pointer' }}>
-            <CafeCard
-              title={cafe.title}
-              image={cafe.image}
-              description={cafe.description}
-              hasWifi={cafe.hasWifi}
-              hasPower={cafe.hasPower}
-              upvotes={cafe.upvotes}
-            />
-          </div>
+          <CafeCard
+            key={cafe.id}
+            title={cafe.title}
+            image={cafe.image}
+            images={cafe.gallery || []}
+            description={cafe.description}
+            hasWifi={cafe.hasWifi}
+            hasPower={cafe.hasPower}
+            upvotes={cafe.upvotes}
+            onClick={() => handleCafeClick(cafe)}
+          />
         ))}
       </MasonryGrid>
 
