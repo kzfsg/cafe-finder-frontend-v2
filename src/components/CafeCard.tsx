@@ -27,7 +27,7 @@ export default function CafeCard({ title, image, images = [], description, hasWi
     if (isHovering && uniqueImages.length > 1) {
       intervalRef.current = window.setInterval(() => {
         setCurrentImageIndex(prevIndex => (prevIndex + 1) % uniqueImages.length);
-      }, 1500); // Change image every 1.5 seconds
+      }, 1200); // Change image every 1.2 seconds
     } else {
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);

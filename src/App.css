@@ -529,7 +529,7 @@ body {
 }
 
 .cafe-card:hover .cafe-image.active {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 /* Gallery indicators */
