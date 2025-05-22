@@ -1,0 +1,197 @@
+[
+  {
+    "id": 1,
+    "title": "Nomadic Cafe",
+    "image": "/images/cafe1.jpg",
+    "description": "A cozy cafe with fast wifi and plenty of power outlets. Perfect for digital nomads.",
+    "hasWifi": true,
+    "hasPower": true,
+    "upvotes": 42,
+    "location": {
+      "address": "123 Main St, Singapore",
+      "googleMapsUrl": "https://maps.google.com/?q=1.3521,103.8198"
+    },
+    "amenities": {
+      "openingHours": "8:00 AM - 8:00 PM",
+      "seatingCapacity": "Medium",
+      "noiseLevel": "Low"
+    },
+    "gallery": [
+      "/images/cafe1.jpg",
+      "/images/cafe1-2.jpg",
+      "/images/cafe1-3.jpg"
+    ],
+    "reviews": [
+      {
+        "id": 1,
+        "userName": "Jane Doe",
+        "rating": 5,
+        "comment": "Great place to work! Fast wifi and friendly staff.",
+        "date": "2023-05-15"
+      },
+      {
+        "id": 2,
+        "userName": "John Smith",
+        "rating": 4,
+        "comment": "Good coffee and quiet atmosphere. Power outlets at every table.",
+        "date": "2023-04-22"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Digital Den",
+    "image": "/images/cafe2.jpg",
+    "description": "A modern cafe designed specifically for remote workers with high-speed internet and meeting rooms.",
+    "hasWifi": true,
+    "hasPower": true,
+    "upvotes": 38,
+    "location": {
+      "address": "456 Tech Ave, Singapore",
+      "googleMapsUrl": "https://maps.google.com/?q=1.3104,103.7890"
+    },
+    "amenities": {
+      "openingHours": "7:00 AM - 10:00 PM",
+      "seatingCapacity": "Large",
+      "noiseLevel": "Medium"
+    },
+    "gallery": [
+      "/images/cafe2.jpg",
+      "/images/cafe2-2.jpg",
+      "/images/cafe2-3.jpg"
+    ],
+    "reviews": [
+      {
+        "id": 3,
+        "userName": "Alice Chen",
+        "rating": 5,
+        "comment": "Best place for remote work in the area! They even have private booths.",
+        "date": "2023-05-10"
+      },
+      {
+        "id": 4,
+        "userName": "Bob Lee",
+        "rating": 5,
+        "comment": "Amazing internet speed and they serve great food too.",
+        "date": "2023-04-30"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Coder's Corner",
+    "image": "/images/cafe3.jpg",
+    "description": "A quiet cafe with a dedicated area for programmers and digital workers.",
+    "hasWifi": true,
+    "hasPower": true,
+    "upvotes": 29,
+    "location": {
+      "address": "789 Dev Lane, Singapore",
+      "googleMapsUrl": "https://maps.google.com/?q=1.3644,103.9915"
+    },
+    "amenities": {
+      "openingHours": "9:00 AM - 9:00 PM",
+      "seatingCapacity": "Small",
+      "noiseLevel": "Very Low"
+    },
+    "gallery": [
+      "/images/cafe3.jpg",
+      "/images/cafe3-2.jpg",
+      "/images/cafe3-3.jpg"
+    ],
+    "reviews": [
+      {
+        "id": 5,
+        "userName": "Charlie Wong",
+        "rating": 4,
+        "comment": "Perfect for focused work. They have a no-talking policy in the work area.",
+        "date": "2023-05-05"
+      },
+      {
+        "id": 6,
+        "userName": "Diana Tan",
+        "rating": 4,
+        "comment": "Great for coding sessions. They even host tech meetups sometimes.",
+        "date": "2023-04-15"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Byte & Brew",
+    "image": "/images/cafe4.jpg",
+    "description": "A tech-themed cafe with excellent coffee and reliable internet.",
+    "hasWifi": true,
+    "hasPower": true,
+    "upvotes": 35,
+    "location": {
+      "address": "101 Binary Road, Singapore",
+      "googleMapsUrl": "https://maps.google.com/?q=1.2966,103.8501"
+    },
+    "amenities": {
+      "openingHours": "8:30 AM - 7:30 PM",
+      "seatingCapacity": "Medium",
+      "noiseLevel": "Medium"
+    },
+    "gallery": [
+      "/images/cafe4.jpg",
+      "/images/cafe4-2.jpg",
+      "/images/cafe4-3.jpg"
+    ],
+    "reviews": [
+      {
+        "id": 7,
+        "userName": "Edward Lim",
+        "rating": 5,
+        "comment": "Love the tech decor and the coffee is amazing!",
+        "date": "2023-05-20"
+      },
+      {
+        "id": 8,
+        "userName": "Fiona Ng",
+        "rating": 4,
+        "comment": "Good place to work with stable internet connection.",
+        "date": "2023-04-25"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Remote Roasters",
+    "image": "/images/cafe5.jpg",
+    "description": "A spacious cafe with dedicated workspaces and meeting areas for remote workers.",
+    "hasWifi": true,
+    "hasPower": true,
+    "upvotes": 45,
+    "location": {
+      "address": "202 Freelance Street, Singapore",
+      "googleMapsUrl": "https://maps.google.com/?q=1.3234,103.9456"
+    },
+    "amenities": {
+      "openingHours": "7:30 AM - 9:30 PM",
+      "seatingCapacity": "Large",
+      "noiseLevel": "Low"
+    },
+    "gallery": [
+      "/images/cafe5.jpg",
+      "/images/cafe5-2.jpg",
+      "/images/cafe5-3.jpg"
+    ],
+    "reviews": [
+      {
+        "id": 9,
+        "userName": "George Tan",
+        "rating": 5,
+        "comment": "They have private meeting rooms you can book. Perfect for client calls!",
+        "date": "2023-05-18"
+      },
+      {
+        "id": 10,
+        "userName": "Hannah Loh",
+        "rating": 5,
+        "comment": "Best remote work cafe in Singapore. They even have a printer you can use.",
+        "date": "2023-05-01"
+      }
+    ]
+  }
+]

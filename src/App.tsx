@@ -1,16 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import "./App.css";
 import Navbar from "./components/Navbar";
-import MasonryGrid from "./components/MasonryGrid";
 import CafeCard from "./components/CafeCard";
+import MasonryGrid from "./components/MasonryGrid";
 import CafeDetails from "./components/CafeDetails";
 import Login from "./components/auth/Login";
 import SignUp from "./components/auth/SignUp";
 import Bookmarks from "./components/Bookmarks";
-import { cafes, type Cafe } from "./data/cafes";
-import authService from "./services/authService";
+import type { Cafe } from "./data/cafes";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import cafeService from "./services/cafeService";
+import "./App.css";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -21,18 +21,69 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [isClosing, setIsClosing] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
-  
+
   useEffect(() => {
-    // Check if user is logged in when component mounts
-    const loggedIn = authService.isLoggedIn();
-    setIsLoggedIn(loggedIn);
+    const fetchCafes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch cafes - cafeService will handle fallback to static data if API fails
+        console.log('Fetching cafes...');
+        const data = await cafeService.getAllCafes();
+        
+        if (data && data.length > 0) {
+          console.log('Successfully fetched cafes:', data.length);
+          setCafes(data);
+        } else {
+          setError('No cafes found. Please try again later.');
+        }
+      } catch (err: any) {
+        console.error('Error in fetch operation:', err);
+        setError('Failed to load cafes. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCafes();
   }, []);
 
+  useEffect(() => {
+    const searchCafes = async () => {
+      if (!searchQuery) {
+        // If search query is empty, fetch all cafes
+        const data = await cafeService.getAllCafes();
+        setCafes(data);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const results = await cafeService.searchCafes(searchQuery);
+        setCafes(results);
+      } catch (err) {
+        console.error('Error searching cafes:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Debounce search to avoid too many API calls
+    const debounceTimer = setTimeout(() => {
+      searchCafes();
+    }, 500);
+    
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
   const handleSearch = (query: string) => {
-    console.log("Searching for:", query);
-    // Search logic here
+    setSearchQuery(query);
   };
 
   const handleCafeClick = (cafe: Cafe) => {
@@ -54,32 +105,81 @@ function App() {
       setSelectedCafe(null);
       setIsClosing(false);
       document.body.style.overflow = 'auto'; // Re-enable scrolling
-      closeTimeoutRef.current = null;
-    }, 250); // Match the animation duration (0.25s = 250ms)
+    }, 300); // Match the animation duration
   };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Home page component with cafe listings
   const HomePage = () => (
     <>
-      <h1 className="tryst">nomadic</h1>
-      <p className="nunitoItalic">work-friendly cafes.</p>
+      <div className="search-container">
+        <h1 className="main-title">
+          <img src="/favicon.svg" alt="Nomadic logo" className="title-icon" />
+          <span className="title-text tryst">nomadic</span>
+        </h1>
+        <p className="subtitle">Find the perfect cafe for your remote work day</p>
+      </div>
       
-      <MasonryGrid>
-        {cafes.map(cafe => (
-          <CafeCard
-            key={cafe.id}
-            id={cafe.id}
-            title={cafe.title}
-            image={cafe.image}
-            images={cafe.gallery || []}
-            description={cafe.description}
-            hasWifi={cafe.hasWifi}
-            hasPower={cafe.hasPower}
-            upvotes={cafe.upvotes}
-            onClick={() => handleCafeClick(cafe)}
-          />
-        ))}
-      </MasonryGrid>
+      {loading && cafes.length === 0 ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading cafes...</p>
+        </div>
+      ) : error ? (
+        <div className="error-container">
+          <p>{error}</p>
+          <button 
+            onClick={async () => {
+              setLoading(true);
+              setError(null);
+              try {
+                // Retry fetching cafes
+                const data = await cafeService.getAllCafes();
+                if (data && data.length > 0) {
+                  setCafes(data);
+                } else {
+                  setError('No cafes found. Please try again later.');
+                }
+              } catch (err) {
+                setError('Failed to load cafes. Please try again later.');
+              } finally {
+                setLoading(false);
+              }
+            }} 
+            className="retry-button"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : cafes.length === 0 ? (
+        <div className="empty-state">
+          <p>No cafes found. Try adjusting your search.</p>
+        </div>
+      ) : (
+        <MasonryGrid>
+          {cafes.map(cafe => (
+            <CafeCard
+              key={cafe.id}
+              id={cafe.id}
+              title={cafe.title}
+              image={cafe.image}
+              images={cafe.gallery || []}
+              description={cafe.description}
+              hasWifi={cafe.hasWifi}
+              hasPower={cafe.hasPower}
+              upvotes={cafe.upvotes}
+              onClick={() => handleCafeClick(cafe)}
+            />
+          ))}
+        </MasonryGrid>
+      )}
 
       {selectedCafe && (
         <div 
