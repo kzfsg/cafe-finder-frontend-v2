@@ -544,6 +544,45 @@ body {
   z-index: 2;
 }
 
+/* Bookmark button */
+.bookmark-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.bookmark-button:hover {
+  background-color: white;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bookmark-button.bookmarked {
+  background-color: rgba(255, 87, 34, 0.1);
+}
+
+.bookmark-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.bookmarked .bookmark-icon {
+  transform: scale(1.1);
+}
+
 .indicator {
   width: 6px;
   height: 6px;

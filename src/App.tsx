@@ -7,12 +7,14 @@ import CafeCard from "./components/CafeCard";
 import CafeDetails from "./components/CafeDetails";
 import Login from "./components/auth/Login";
 import SignUp from "./components/auth/SignUp";
+import Bookmarks from "./components/Bookmarks";
 import { cafes, type Cafe } from "./data/cafes";
 import authService from "./services/authService";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = authService.isLoggedIn();
+  const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
@@ -66,6 +68,7 @@ function App() {
         {cafes.map(cafe => (
           <CafeCard
             key={cafe.id}
+            id={cafe.id}
             title={cafe.title}
             image={cafe.image}
             images={cafe.gallery || []}
@@ -95,20 +98,27 @@ function App() {
   );
 
   return (
-    <Router>
-      <div className="app-container">
-        <header className="app-header">
-          <Navbar onSearch={handleSearch} />
-        </header>
-        <main className="app-content">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/" element={<HomePage />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="app-container">
+          <header className="app-header">
+            <Navbar onSearch={handleSearch} />
+          </header>
+          <main className="app-content">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/bookmarks" element={
+                <ProtectedRoute>
+                  <Bookmarks />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

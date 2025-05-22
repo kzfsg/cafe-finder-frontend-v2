@@ -1,16 +1,22 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService, { type LoginData } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginData>({
     identifier: '',
     password: ''
   });
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  
+  // Get the redirect path from location state or default to home
+  const from = location.state?.from || '/';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,8 +38,13 @@ const Login = () => {
     
     try {
       setLoading(true);
-      await authService.login(formData);
-      navigate('/'); // Redirect to home page after successful login
+      const response = await authService.login(formData);
+      
+      // Update auth context with the user data
+      login(response.user);
+      
+      // Redirect to the original page or home
+      navigate(from);
     } catch (err: any) {
       console.error('Login error:', err);
       setError(

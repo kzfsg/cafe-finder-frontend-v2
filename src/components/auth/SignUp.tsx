@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import authService from '../../services/authService';
-import type { RegisterData } from '../../services/authService';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import authService, { type RegisterData } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<RegisterData & { confirmPassword: string }>({
     username: '',
     email: '',
@@ -14,6 +16,9 @@ const SignUp = () => {
   });
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  
+  // Get the redirect path from location state or default to home
+  const from = location.state?.from || '/';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,15 +44,20 @@ const SignUp = () => {
     }
     
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('Password must be at least 6 characters');
       return;
     }
     
     try {
       setLoading(true);
-      const { username, email, password } = formData;
-      await authService.register({ username, email, password });
-      navigate('/'); // Redirect to home page after successful registration
+      const { confirmPassword, ...registerData } = formData;
+      const response = await authService.register(registerData);
+      
+      // Update auth context with the user data
+      login(response.user);
+      
+      // Redirect to the original page or home
+      navigate(from);
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(

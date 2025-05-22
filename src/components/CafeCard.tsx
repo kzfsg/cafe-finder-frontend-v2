@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
+import BookmarkButton from './BookmarkButton';
 
 interface CafeCardProps {
+  id?: number;
   title: string;
   image: string;
   images?: string[];
@@ -11,7 +13,7 @@ interface CafeCardProps {
   onClick?: () => void;
 }
 
-export default function CafeCard({ title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onClick }: CafeCardProps) {
   // Combine the main image with additional images if provided
   const allImages = images.length > 0 ? [image, ...images] : [image];
   
@@ -63,6 +65,9 @@ export default function CafeCard({ title, image, images = [], description, hasWi
             loading="lazy"
           />
         ))}
+        
+        {/* Bookmark button */}
+        <BookmarkButton cafeId={id} />
         
         {uniqueImages.length > 1 && (
           <div className="gallery-indicators">

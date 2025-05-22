@@ -1,9 +1,8 @@
 // No need to import React with modern JSX transform
-import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import ProfileAvatar from './ProfileAvatar';
-import authService from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 import './../App.css';
 
 interface NavbarProps {
@@ -12,17 +11,10 @@ interface NavbarProps {
 
 export default function Navbar({ onSearch }: NavbarProps) {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  
-  useEffect(() => {
-    // Check if user is logged in when component mounts
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-  }, []);
+  const { user, logout } = useAuth();
   
   const handleLogout = () => {
-    authService.logout();
-    setUser(null);
+    logout();
     navigate('/');
   };
 
@@ -42,9 +34,9 @@ export default function Navbar({ onSearch }: NavbarProps) {
       </div>
       
       <div className="navbar-right">
-        <button className="icon-button saved-button" aria-label="Saved cafes">
-          <img src="/icons/bookmark.svg" alt="Saved cafes" className="custom-icon" />
-        </button>
+        <Link to="/bookmarks" className="icon-button saved-button" aria-label="Bookmarked cafes">
+          <img src="/icons/bookmark.svg" alt="Bookmarked cafes" className="custom-icon" />
+        </Link>
         
         {user ? (
           <div className="user-menu-container">

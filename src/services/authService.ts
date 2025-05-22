@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Base URL for Strapi API - update this to match your Strapi backend URL
-const API_URL = 'http://localhost:1337/api';
+// Base URL for Strapi API
+// Try with and without the /api suffix depending on your Strapi configuration
+const API_URL = 'http://localhost:1337';
 
 // Create an axios instance with default config
 const api = axios.create({
@@ -49,55 +50,88 @@ export interface User {
   avatar?: {
     url: string;
   };
+  bookmarkedCafes?: any[];
+  [key: string]: any; // For other properties that might be returned
 }
 
 // Authentication service methods
 const authService = {
   // Register a new user
   register: async (data: RegisterData) => {
-    const response = await api.post('/auth/local/register', data);
-    if (response.data.jwt) {
-      localStorage.setItem('jwt', response.data.jwt);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    try {
+      // Using /api prefix for Strapi v4
+      const response = await api.post('/api/auth/local/register', data);
+      if (response.data.jwt) {
+        localStorage.setItem('jwt', response.data.jwt);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     }
-    return response.data;
   },
-  
+
   // Login user
   login: async (data: LoginData) => {
-    const response = await api.post('/auth/local', data);
-    if (response.data.jwt) {
-      localStorage.setItem('jwt', response.data.jwt);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    try {
+      // Try with the /api prefix for Strapi v4
+      const response = await api.post('/api/auth/local', data);
+      if (response.data.jwt) {
+        localStorage.setItem('jwt', response.data.jwt);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    return response.data;
   },
-  
+
   // Logout user
   logout: () => {
     localStorage.removeItem('jwt');
     localStorage.removeItem('user');
   },
   
-  // Get current user profile
-  getCurrentUser: () => {
+  // Get current user from localStorage
+  getCurrentUser: (): User | null => {
     const userStr = localStorage.getItem('user');
-    if (userStr) {
-      return JSON.parse(userStr);
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr) as User;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
     }
-    return null;
   },
   
   // Check if user is logged in
-  isLoggedIn: () => {
+  isLoggedIn: (): boolean => {
     return !!localStorage.getItem('jwt');
   },
 
   // Get user's profile picture
-  getUserAvatar: (user: User) => {
+  getUserAvatar: (user: User): string => {
     // If user has an avatar, return the URL, otherwise return default avatar
-    // Note: Adjust this based on your Strapi media structure
-    return user.avatar?.url || '/icons/default-avatar.svg';
+    return user?.avatar?.url || '/icons/default-avatar.svg';
+  },
+  
+  // Get the current user with fresh data from the API
+  refreshUserData: async (): Promise<User | null> => {
+    if (!authService.isLoggedIn()) {
+      return null;
+    }
+    
+    try {
+      const response = await api.get('/users/me?populate=bookmarkedCafes');
+      const userData = response.data;
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+      return null;
+    }
   }
 };
 
