@@ -41,7 +41,8 @@ api.interceptors.response.use(
 );
 
 // Transform Strapi cafe data to our application's Cafe format
-const transformCafeData = (strapiCafe: any): Cafe => {
+// Export this so it can be used by other services
+export const transformCafeData = (strapiCafe: any): Cafe => {
   try {
     console.log('Transforming cafe data:', strapiCafe);
     
@@ -251,6 +252,9 @@ const transformCafeData = (strapiCafe: any): Cafe => {
 };
 
 const cafeService = {
+  // Make the transform function available
+  transformCafeData,
+  
   // Get all cafes
   getAllCafes: async (): Promise<Cafe[]> => {
     try {

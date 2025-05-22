@@ -14,8 +14,17 @@ interface CafeCardProps {
 }
 
 export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onClick }: CafeCardProps) {
+  // Default image placeholder
+  const defaultImage = 'https://via.placeholder.com/500x300?text=No+Image';
+  
+  // Ensure image is valid, use default if not
+  const safeMainImage = image || defaultImage;
+  
+  // Filter out any undefined or null images
+  const safeImages = images.filter(img => img);
+  
   // Combine the main image with additional images if provided
-  const allImages = images.length > 0 ? [image, ...images] : [image];
+  const allImages = safeImages.length > 0 ? [safeMainImage, ...safeImages] : [safeMainImage];
   
   // Use only unique images
   const uniqueImages = [...new Set(allImages)];
@@ -59,10 +68,14 @@ export default function CafeCard({ id = 0, title, image, images = [], descriptio
         {uniqueImages.map((img, index) => (
           <img 
             key={index}
-            src={img} 
+            src={img || defaultImage} 
             alt={`${title} - image ${index + 1}`} 
             className={`cafe-image ${index === currentImageIndex ? 'active' : ''}`}
             loading="lazy"
+            onError={(e) => {
+              // If image fails to load, replace with default
+              (e.target as HTMLImageElement).src = defaultImage;
+            }}
           />
         ))}
         
