@@ -24,7 +24,24 @@ const Bookmarks = () => {
   const fetchBookmarkedCafes = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching bookmarked cafes from Bookmarks component...');
       const cafes = await bookmarkService.getBookmarkedCafes();
+      
+      // Debug the data received from the bookmarkService
+      console.log('Received bookmarked cafes:', cafes);
+      
+      if (cafes && cafes.length > 0) {
+        // Log the first cafe's image data to check its structure
+        console.log('First cafe image data:', {
+          id: cafes[0].id,
+          title: cafes[0].title,
+          image: cafes[0].image,
+          gallery: cafes[0].gallery,
+          hasImage: Boolean(cafes[0].image),
+          galleryLength: cafes[0].gallery ? cafes[0].gallery.length : 0
+        });
+      }
+      
       setBookmarkedCafes(cafes);
     } catch (error) {
       console.error('Error fetching bookmarked cafes:', error);

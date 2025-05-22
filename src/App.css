@@ -643,7 +643,51 @@ body {
 }
 
 .bookmark-button.bookmarked {
-  background-color: rgba(255, 87, 34, 0.1);
+  background-color: rgba(255, 87, 34, 0.2) !important;
+}
+
+/* Bookmark button loading spinner */
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 87, 34, 0.2);
+  border-radius: 50%;
+  border-top-color: #FF5722;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Masonry Grid Layout */
+.masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-gap: 20px;
+  padding: 20px;
+}
+
+@media (min-width: 768px) {
+  .masonry-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .masonry-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  }
+}
+
+/* Bookmarks Page Styling */
+.bookmarks-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.bookmarks-container .page-title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+  text-align: center;
 }
 
 .bookmark-icon {

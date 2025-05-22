@@ -14,8 +14,8 @@ interface CafeCardProps {
 }
 
 export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onClick }: CafeCardProps) {
-  // Default image placeholder
-  const defaultImage = 'https://via.placeholder.com/500x300?text=No+Image';
+  // Default image placeholder (using local SVG instead of external service)
+  const defaultImage = '/images/no-image.svg';
   
   // Ensure image is valid, use default if not
   const safeMainImage = image || defaultImage;
@@ -115,7 +115,13 @@ export default function CafeCard({ id = 0, title, image, images = [], descriptio
             </div>
           </div>
         </div>
-        <p className="cafe-description">{description}</p>
+        <p className="cafe-description">
+          {typeof description === 'string' 
+            ? description 
+            : description && typeof description === 'object' 
+              ? 'No description available' // Fallback for object descriptions
+              : 'No description available'}
+        </p>
       </div>
     </div>
   );

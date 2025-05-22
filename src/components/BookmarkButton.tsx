@@ -45,8 +45,17 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
 
     try {
       setIsLoading(true);
+      console.log(`Attempting to toggle bookmark for cafe ${cafeId}...`);
+      
+      // Toggle the bookmark
       const result = await bookmarkService.toggleBookmark(cafeId);
+      console.log('Toggle result:', result);
+      
+      // Update the UI state
       setIsBookmarked(result.bookmarked);
+      
+      // Show a visual feedback (could add a toast notification here)
+      console.log(result.message);
     } catch (error) {
       console.error('Error toggling bookmark:', error);
     } finally {
@@ -54,18 +63,45 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
     }
   };
 
+  // Determine the appropriate styles and icons based on state
+  const buttonClasses = [
+    'bookmark-button',
+    isBookmarked ? 'bookmarked' : '',
+    isLoading ? 'loading' : '',
+    className
+  ].filter(Boolean).join(' ');
+  
+  const iconSrc = isBookmarked ? '/icons/bookmark-filled.svg' : '/icons/bookmark.svg';
+  const iconAlt = isBookmarked ? 'Bookmarked' : 'Bookmark';
+  const buttonTitle = isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks';
+  
+  console.log('Bookmark button state:', { isBookmarked, isLoading, buttonClasses });
+  
   return (
     <button 
-      className={`bookmark-button ${isBookmarked ? 'bookmarked' : ''} ${className}`}
+      className={buttonClasses}
       onClick={handleBookmarkClick}
       disabled={isLoading}
-      title={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
+      title={buttonTitle}
+      style={{ 
+        // Inline styles for better visibility during debugging
+        backgroundColor: isBookmarked ? 'rgba(255, 87, 34, 0.2)' : 'rgba(255, 255, 255, 0.8)' 
+      }}
     >
-      <img 
-        src={isBookmarked ? '/icons/bookmark-filled.svg' : '/icons/bookmark.svg'} 
-        alt={isBookmarked ? 'Bookmarked' : 'Bookmark'} 
-        className="bookmark-icon"
-      />
+      {isLoading ? (
+        <div className="button-spinner"></div>
+      ) : (
+        <img 
+          src={iconSrc} 
+          alt={iconAlt} 
+          className="bookmark-icon"
+          onError={(e) => {
+            console.error(`Failed to load bookmark icon: ${iconSrc}`);
+            // Fallback to text if image fails to load
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      )}
     </button>
   );
 };
