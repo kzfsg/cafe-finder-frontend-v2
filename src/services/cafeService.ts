@@ -251,9 +251,40 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
   }
 };
 
+// Track upvoted cafes in localStorage
+const UPVOTED_CAFES_KEY = 'upvotedCafes';
+
+const getUpvotedCafes = (): number[] => {
+  if (typeof window === 'undefined') return [];
+  const saved = localStorage.getItem(UPVOTED_CAFES_KEY);
+  return saved ? JSON.parse(saved) : [];
+};
+
+export const isCafeUpvoted = (cafeId: number): boolean => {
+  const upvotedCafes = getUpvotedCafes();
+  return upvotedCafes.includes(cafeId);
+};
+
+const toggleCafeUpvote = (cafeId: number): number[] => {
+  const upvotedCafes = getUpvotedCafes();
+  const index = upvotedCafes.indexOf(cafeId);
+  
+  if (index === -1) {
+    upvotedCafes.push(cafeId);
+  } else {
+    upvotedCafes.splice(index, 1);
+  }
+  
+  localStorage.setItem(UPVOTED_CAFES_KEY, JSON.stringify(upvotedCafes));
+  return upvotedCafes;
+};
+
 const cafeService = {
   // Make the transform function available
   transformCafeData,
+  // Include upvote related functions
+  isCafeUpvoted: (cafeId: number) => isCafeUpvoted(cafeId),
+
   
   // Get all cafes
   getAllCafes: async (): Promise<Cafe[]> => {
@@ -308,7 +339,7 @@ const cafeService = {
   },
 
   // Search cafes by query
-  searchCafes: async (query: string): Promise<Cafe[]> => {
+  async searchCafes(query: string): Promise<Cafe[]> {
     try {
       // Using Strapi's filter to search by name
       const response = await api.get(`/api/cafes?populate=*&filters[Name][$containsi]=${query}`);
@@ -317,6 +348,35 @@ const cafeService = {
     } catch (error) {
       console.error('Error searching cafes:', error);
       return [];
+    }
+  },
+  
+  // Upvote a cafe
+  upvoteCafe: async (cafeId: number): Promise<{ success: boolean; upvotes: number }> => {
+    try {
+      const isUpvoted = isCafeUpvoted(cafeId);
+      const increment = isUpvoted ? -1 : 1;
+      
+      // Toggle the upvote in local storage
+      toggleCafeUpvote(cafeId);
+      
+      // Make the API call to update the server
+      const response = await axios.put(`${API_URL}/api/cafes/${cafeId}`, {
+        data: {
+          upvotes: {
+            increment: increment
+          }
+        }
+      });
+      
+      // Return the new upvote count
+      return {
+        success: true,
+        upvotes: response.data.data.attributes.upvotes
+      };
+    } catch (error) {
+      console.error('Error upvoting cafe:', error);
+      throw error;
     }
   }
 };

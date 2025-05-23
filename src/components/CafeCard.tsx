@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import BookmarkButton from './BookmarkButton';
+import cafeService from '../services/cafeService';
 
 interface CafeCardProps {
   id?: number;
@@ -10,10 +11,19 @@ interface CafeCardProps {
   hasWifi?: boolean;
   hasPower?: boolean;
   upvotes?: number;
+  onUpvote?: (id: number, newUpvotes: number) => void;
   onClick?: () => void;
 }
 
-export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
+  const [isUpvoted, setIsUpvoted] = useState(false);
+  
+  // Check if cafe is upvoted on component mount
+  useEffect(() => {
+    if (id) {
+      setIsUpvoted(cafeService.isCafeUpvoted(id));
+    }
+  }, [id]);
   // Default image placeholder (using local SVG instead of external service)
   const defaultImage = '/images/no-image.svg';
   
@@ -109,10 +119,29 @@ export default function CafeCard({ id = 0, title, image, images = [], descriptio
                 </div>
               )}
             </div>
-            <div className="upvotes-container" title="Upvotes">
-              <img src="/icons/upvote.svg" alt="Upvote" className="upvote-icon" />
+            <button 
+              className={`upvote-button ${isUpvoted ? 'upvoted' : ''}`}
+              onClick={async (e) => {
+                e.stopPropagation(); // Prevent card click
+                try {
+                  const { upvotes: newUpvotes } = await cafeService.upvoteCafe(id);
+                  setIsUpvoted(cafeService.isCafeUpvoted(id));
+                  if (onUpvote) {
+                    onUpvote(id, newUpvotes);
+                  }
+                } catch (error) {
+                  console.error('Error upvoting cafe:', error);
+                }
+              }}
+              title={isUpvoted ? 'Remove upvote' : 'Upvote this cafe'}
+            >
+              <img 
+                src="/icons/upvote.svg" 
+                alt="Upvote" 
+                className={`upvote-icon ${isUpvoted ? 'active' : ''}`} 
+              />
               <span className="upvotes-count">{upvotes}</span>
-            </div>
+            </button>
           </div>
         </div>
         <p className="cafe-description">
