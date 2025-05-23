@@ -367,9 +367,11 @@ const cafeService = {
         });
       }
       
-      // Get updated upvote count
-      const cafeResponse = await api.get(`/api/cafes/${cafeId}?fields[0]=upvotes`);
-      const upvotes = cafeResponse.data.data.attributes.upvotes || 0;
+      // Get updated cafe data with all relations
+      const cafeResponse = await api.get(`/api/cafes?filters[id][$eq]=${cafeId}&populate=*`);
+      const cafeData = cafeResponse.data.data[0]?.attributes;
+      const filter = cafeData?.Filter?.data?.attributes;
+      const upvotes = filter?.upvotes || 0;
       
       return {
         success: true,

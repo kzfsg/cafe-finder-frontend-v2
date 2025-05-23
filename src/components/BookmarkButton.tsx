@@ -75,8 +75,6 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
   const iconAlt = isBookmarked ? 'Bookmarked' : 'Bookmark';
   const buttonTitle = isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks';
   
-  console.log('Bookmark button state:', { isBookmarked, isLoading, buttonClasses });
-  
   return (
     <button 
       className={buttonClasses}

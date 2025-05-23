@@ -71,23 +71,15 @@ const bookmarkService = {
       // Handle different possible response structures
       if (response.data?.bookmarkedCafes) {
         bookmarkedCafes = response.data.bookmarkedCafes;
-        console.log('Found bookmarkedCafes directly in response.data');
       } else if (response.data?.data?.attributes?.bookmarkedCafes?.data) {
         bookmarkedCafes = response.data.data.attributes.bookmarkedCafes.data;
-        console.log('Found bookmarkedCafes in response.data.data.attributes.bookmarkedCafes.data');
       } else {
-        console.warn('No bookmarkedCafes found in response');
-        console.log('Response structure:', response.data);
+        console.warn('No bookmarked cafes found in the response');
         return [];
       }
       
-      console.log('Extracted bookmarked cafes:', bookmarkedCafes);
-      
       // Transform each cafe to our application format using the imported function
-      const transformedCafes = bookmarkedCafes.map((cafe: Cafe) => transformCafeData(cafe));
-      console.log(`Transformed ${transformedCafes.length} bookmarked cafes`);
-      
-      return transformedCafes;
+      return bookmarkedCafes.map((cafe: Cafe) => transformCafeData(cafe));
     } catch (error: any) {
       console.error('Error fetching bookmarked cafes:', error);
       console.error('Error details:', error.response?.data || error.message);
