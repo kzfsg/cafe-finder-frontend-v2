@@ -209,7 +209,7 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
       description: description || attributes.description || 'No description available',
       hasWifi: Boolean(filter.wifiSpeed) || attributes.hasWifi || false,
       hasPower: Boolean(filter.powerOutletAvailable) || attributes.hasPower || false,
-      upvotes: attributes.upvotes || Math.floor(Math.random() * 50) + 5, // Random upvotes for now
+      upvotes: filter.upvotes ?? 0, // Use upvotes from API, default to 0 if null/undefined
       location: {
         address: attributes.Location?.address || attributes.location?.address || 'Address not available',
         googleMapsUrl: attributes.location?.googleMapsUrl || `https://maps.google.com/?q=${attributes.Location?.latitude || 0},${attributes.Location?.longitude || 0}`
