@@ -4,11 +4,11 @@ import authService from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
 interface BookmarkButtonProps {
-  cafeId: number;
+  documentId: string;
   className?: string;
 }
 
-const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' }) => {
+const BookmarkButton: React.FC<BookmarkButtonProps> = ({ documentId, className = '' }) => {
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -20,12 +20,12 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
     } else {
       setIsLoading(false);
     }
-  }, [cafeId]);
+  }, [documentId]);
 
   const checkBookmarkStatus = async () => {
     try {
       setIsLoading(true);
-      const bookmarked = await bookmarkService.isBookmarked(cafeId);
+      const bookmarked = await bookmarkService.isBookmarked(documentId);
       setIsBookmarked(bookmarked);
     } catch (error) {
       console.error('Error checking bookmark status:', error);
@@ -45,10 +45,10 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
 
     try {
       setIsLoading(true);
-      console.log(`Attempting to toggle bookmark for cafe ${cafeId}...`);
+      console.log(`Attempting to toggle bookmark for cafe ${documentId}...`);
       
       // Toggle the bookmark
-      const result = await bookmarkService.toggleBookmark(cafeId);
+      const result = await bookmarkService.toggleBookmark(documentId);
       console.log('Toggle result:', result);
       
       // Update the UI state

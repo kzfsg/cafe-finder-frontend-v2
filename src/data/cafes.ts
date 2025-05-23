@@ -9,6 +9,7 @@ export interface Review {
 
 export interface Cafe {
   id: number;
+  documentId?: string;
   title: string;
   image: string;
   description: string;
