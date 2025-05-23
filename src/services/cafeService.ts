@@ -251,39 +251,29 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
   }
 };
 
-// Track upvoted cafes in localStorage
-const UPVOTED_CAFES_KEY = 'upvotedCafes';
-
-const getUpvotedCafes = (): number[] => {
-  if (typeof window === 'undefined') return [];
-  const saved = localStorage.getItem(UPVOTED_CAFES_KEY);
-  return saved ? JSON.parse(saved) : [];
-};
-
-export const isCafeUpvoted = (cafeId: number): boolean => {
-  const upvotedCafes = getUpvotedCafes();
-  return upvotedCafes.includes(cafeId);
-};
-
-const toggleCafeUpvote = (cafeId: number): number[] => {
-  const upvotedCafes = getUpvotedCafes();
-  const index = upvotedCafes.indexOf(cafeId);
-  
-  if (index === -1) {
-    upvotedCafes.push(cafeId);
-  } else {
-    upvotedCafes.splice(index, 1);
+// Get the current user's upvoted cafes
+const getUpvotedCafes = async (): Promise<number[]> => {
+  try {
+    const response = await api.get('/api/users/me?populate=upvotedCafes');
+    if (response.data && response.data.upvotedCafes) {
+      return response.data.upvotedCafes.map((cafe: any) => cafe.id);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching upvoted cafes:', error);
+    return [];
   }
-  
-  localStorage.setItem(UPVOTED_CAFES_KEY, JSON.stringify(upvotedCafes));
-  return upvotedCafes;
+};
+
+// Check if a cafe is upvoted by the current user
+export const isCafeUpvoted = async (cafeId: number): Promise<boolean> => {
+  const upvotedCafes = await getUpvotedCafes();
+  return upvotedCafes.includes(cafeId);
 };
 
 const cafeService = {
   // Make the transform function available
   transformCafeData,
-  // Include upvote related functions
-  isCafeUpvoted: (cafeId: number) => isCafeUpvoted(cafeId),
 
   
   // Get all cafes
@@ -351,33 +341,56 @@ const cafeService = {
     }
   },
   
-  // Upvote a cafe
-  upvoteCafe: async (cafeId: number): Promise<{ success: boolean; upvotes: number }> => {
+  // Upvote or remove upvote from a cafe
+  upvoteCafe: async (cafeId: number): Promise<{ success: boolean; upvoted: boolean; upvotes: number }> => {
     try {
-      const isUpvoted = isCafeUpvoted(cafeId);
-      const increment = isUpvoted ? -1 : 1;
+      // Check current upvote status
+      const currentlyUpvoted = await cafeService.isCafeUpvoted(cafeId);
       
-      // Toggle the upvote in local storage
-      toggleCafeUpvote(cafeId);
+      // Get the current user's ID
+      const userResponse = await api.get('/api/users/me');
+      const userId = userResponse.data.id;
       
-      // Make the API call to update the server
-      const response = await axios.put(`${API_URL}/api/cafes/${cafeId}`, {
-        data: {
-          upvotes: {
-            increment: increment
+      if (currentlyUpvoted) {
+        // Remove upvote using disconnect
+        await api.put(`/api/users/${userId}`, {
+          upvotedCafes: {
+            disconnect: [cafeId]
           }
-        }
-      });
+        });
+      } else {
+        // Add upvote using connect
+        await api.put(`/api/users/${userId}`, {
+          upvotedCafes: {
+            connect: [cafeId]
+          }
+        });
+      }
       
-      // Return the new upvote count
+      // Get updated upvote count
+      const cafeResponse = await api.get(`/api/cafes/${cafeId}?fields[0]=upvotes`);
+      const upvotes = cafeResponse.data.data.attributes.upvotes || 0;
+      
       return {
         success: true,
-        upvotes: response.data.data.attributes.upvotes
+        upvoted: !currentlyUpvoted,
+        upvotes: upvotes
       };
     } catch (error) {
-      console.error('Error upvoting cafe:', error);
+      console.error('Error toggling cafe upvote:', error);
       throw error;
     }
+  },
+  
+  // Get upvoted cafes for the current user
+  async getUpvotedCafes(): Promise<number[]> {
+    return getUpvotedCafes();
+  },
+  
+  // Check if a cafe is upvoted by the current user
+  isCafeUpvoted: async (cafeId: number): Promise<boolean> => {
+    const upvotedCafes = await getUpvotedCafes();
+    return upvotedCafes.includes(cafeId);
   }
 };
 
