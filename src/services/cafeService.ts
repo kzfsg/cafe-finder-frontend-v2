@@ -351,10 +351,13 @@ const cafeService = {
       ]);
       
       const userId = userResponse.data?.id;
-      const cafeData = initialCafeResponse.data?.data || initialCafeResponse.data;
+      // Handle both array and direct object responses
+      const cafeData = Array.isArray(initialCafeResponse.data?.data) 
+        ? initialCafeResponse.data.data[0] 
+        : initialCafeResponse.data?.data || initialCafeResponse.data;
       
       if (!cafeData) {
-        console.error('No cafe data found in response:', initialCafeResponse);
+        console.error('No cafe data found in response:', initialCafeResponse, cafeId);
         throw new Error('Cafe data not found in response');
       }
       
