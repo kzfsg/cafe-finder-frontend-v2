@@ -351,13 +351,23 @@ const cafeService = {
       ]);
       
       const userId = userResponse.data?.id;
-      const cafeData = initialCafeResponse.data?.data;
-      const filter = cafeData?.attributes?.filters?.data?.[0];
-      const currentUpvotes = filter?.attributes?.upvotes || 0;
+      const cafeData = initialCafeResponse.data?.data || initialCafeResponse.data;
+      
+      if (!cafeData) {
+        console.error('No cafe data found in response:', initialCafeResponse);
+        throw new Error('Cafe data not found in response');
+      }
+      
+      const documentId = cafeData.documentId;
+      const currentUpvotes = cafeData.upvotes || 0;
+      
+      if (!documentId) {
+        console.error('Document ID not found in cafe data:', cafeData);
+        throw new Error('Document ID not found for cafe');
+      }
       
       console.log('Initial user data:', userResponse.data);
       console.log('Initial cafe data:', cafeData);
-      console.log('Current filter data:', filter);
       
       // Toggle upvote
       const currentlyUpvoted = await cafeService.isCafeUpvoted(cafeId);
@@ -366,30 +376,31 @@ const cafeService = {
       // Update user's upvoted cafes
       const userEndpoint = `/api/users/${userId}`;
       const userData = {
-        upvotedCafes: currentlyUpvoted ? { disconnect: [cafeId] } : { connect: [cafeId] }
+        data: {
+          upvotedCafes: currentlyUpvoted ? 
+            { disconnect: [cafeId] } : 
+            { connect: [cafeId] }
+        }
       };
       
-      // Update cafe's upvote count in Filter
-      const filterId = filter?.id;
-      if (filterId) {
-        console.log(`Updating filter ${filterId} with upvotes:`, newUpvotes);
-        const updateResponse = await api.put(`/api/filters/${filterId}`, {
-          data: { upvotes: newUpvotes }
-        });
-        console.log('Filter update response:', updateResponse.data);
+      // Update cafe's upvote count using documentId
+      console.log(`Updating cafe ${documentId} with upvotes:`, newUpvotes);
+      await api.put(`/api/cafes/${documentId}`, { 
+        data: {
+        upvotes: newUpvotes
       }
+      });
       
       // Update user's upvoted cafes
       const toggleResponse = await api.put(userEndpoint, userData);
       console.log('Upvote toggle response:', toggleResponse.status, toggleResponse.data);
       
       // Get updated cafe state
-      const updatedCafeResponse = await api.get(`/api/cafes?[id][$eq]=${cafeId}&populate=*`);
+      const updatedCafeResponse = await api.get(`/api/cafes/${documentId}`);
       console.log('Updated cafe data:', updatedCafeResponse.data);
       
-      const updatedCafeData = updatedCafeResponse.data.data?.[0]?.attributes;
-      const updatedFilter = updatedCafeData?.Filter?.[0];
-      const upvotes = updatedFilter?.upvotes || newUpvotes; // Use newUpvotes as fallback
+      const updatedCafe = updatedCafeResponse.data;
+      const upvotes = updatedCafe?.upvotes || newUpvotes; // Use newUpvotes as fallback
       
       return {
         success: true,
