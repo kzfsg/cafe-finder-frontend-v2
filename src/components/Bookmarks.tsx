@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import bookmarkService from '../services/bookmarkService';
 import authService from '../services/authService';
 import CafeCard from './CafeCard';
 import MasonryGrid from './MasonryGrid';
+import CafeDetails from './CafeDetails';
 import type { Cafe } from '../data/cafes';
 
 const Bookmarks = () => {
+  const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const [bookmarkedCafes, setBookmarkedCafes] = useState<Cafe[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,57 +22,92 @@ const Bookmarks = () => {
       navigate('/login', { state: { from: '/bookmarks' } });
       return;
     }
-
+    
     fetchBookmarkedCafes();
   }, [navigate]);
 
   const fetchBookmarkedCafes = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching bookmarked cafes from Bookmarks component...');
+      setError(null);
+      console.log('Fetching bookmarked cafes...');
+      
       const cafes = await bookmarkService.getBookmarkedCafes();
       
-      // Debug the data received from the bookmarkService
-      console.log('Received bookmarked cafes:', cafes);
-      
       if (cafes && cafes.length > 0) {
-        // Log the first cafe's image data to check its structure
-        console.log('First cafe image data:', {
-          id: cafes[0].id,
-          title: cafes[0].title,
-          image: cafes[0].image,
-          gallery: cafes[0].gallery,
-          hasImage: Boolean(cafes[0].image),
-          galleryLength: cafes[0].gallery ? cafes[0].gallery.length : 0
-        });
+        console.log('Successfully fetched bookmarked cafes:', cafes.length);
+        setBookmarkedCafes(cafes);
+      } else {
+        setError('No bookmarked cafes found.');
       }
-      
-      setBookmarkedCafes(cafes);
-    } catch (error) {
-      console.error('Error fetching bookmarked cafes:', error);
+    } catch (err: any) {
+      console.error('Error fetching bookmarked cafes:', err);
+      setError('Failed to load bookmarked cafes. Please try again later.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCafeClick = (cafe: Cafe) => {
-    navigate(`/cafe/${cafe.id}`);
+    setSelectedCafe(cafe);
+    document.body.style.overflow = 'hidden';
   };
 
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading your bookmarked cafes...</p>
-      </div>
-    );
-  }
+  const handleCloseDetails = () => {
+    setIsClosing(true);
+    
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+    }
+    
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setSelectedCafe(null);
+      setIsClosing(false);
+      document.body.style.overflow = 'auto';
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <div className="bookmarks-container">
-      <h1 className="page-title">My Bookmarked Cafes</h1>
-      
-      {bookmarkedCafes.length === 0 ? (
+    <>
+      {isLoading && bookmarkedCafes.length === 0 ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading your bookmarked cafes...</p>
+        </div>
+      ) : error ? (
+        <div className="error-container">
+          <p>{error}</p>
+          <button 
+            onClick={async () => {
+              setIsLoading(true);
+              setError(null);
+              try {
+                const cafes = await bookmarkService.getBookmarkedCafes();
+                if (cafes && cafes.length > 0) {
+                  setBookmarkedCafes(cafes);
+                } else {
+                  setError('No bookmarked cafes found.');
+                }
+              } catch (err) {
+                setError('Failed to load bookmarked cafes. Please try again later.');
+              } finally {
+                setIsLoading(false);
+              }
+            }} 
+            className="retry-button"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : bookmarkedCafes.length === 0 ? (
         <div className="empty-state">
           <img src="/icons/bookmark.svg" alt="Bookmark" className="empty-state-icon" />
           <h2>No bookmarked cafes yet</h2>
@@ -80,24 +120,41 @@ const Bookmarks = () => {
           </button>
         </div>
       ) : (
-        <MasonryGrid>
-          {bookmarkedCafes.map(cafe => (
-            <CafeCard
-              key={cafe.id}
-              id={cafe.id}
-              title={cafe.title}
-              image={cafe.image}
-              images={cafe.gallery || []}
-              description={cafe.description}
-              hasWifi={cafe.hasWifi}
-              hasPower={cafe.hasPower}
-              upvotes={cafe.upvotes}
-              onClick={() => handleCafeClick(cafe)}
-            />
-          ))}
-        </MasonryGrid>
+        <div className="bookmarks-container">
+          <h1 className="page-title">My Bookmarked Cafes</h1>
+          <MasonryGrid>
+            {bookmarkedCafes.map(cafe => (
+              <CafeCard
+                key={cafe.id}
+                id={cafe.id}
+                title={cafe.title}
+                image={cafe.image}
+                images={cafe.gallery || []}
+                description={cafe.description}
+                hasWifi={cafe.hasWifi}
+                hasPower={cafe.hasPower}
+                upvotes={cafe.upvotes}
+                onClick={() => handleCafeClick(cafe)}
+              />
+            ))}
+          </MasonryGrid>
+        </div>
       )}
-    </div>
+
+      {selectedCafe && (
+        <div 
+          className="cafe-details-overlay"
+          onClick={handleCloseDetails}
+        >
+          <div 
+            className={`cafe-details-wrapper ${isClosing ? 'closing' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CafeDetails cafe={selectedCafe} onClose={handleCloseDetails} />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
