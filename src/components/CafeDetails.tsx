@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import type { Cafe, Review } from '../data/cafes';
+import type { Cafe } from '../data/cafes';
 import '../styles/CafeDetails.css';
+import UpvoteButton from './UpvoteButton';
 
 interface CafeDetailsProps {
   cafe: Cafe;
@@ -15,11 +16,7 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
     comment: ''
   });
 
-  const handleUpvote = () => {
-    // This would be connected to an API in a real app
-    console.log(`Upvoted cafe: ${cafe.id}`);
-    // For now, we'll just log the action
-  };
+  // Upvote functionality is now handled by the UpvoteButton component
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,14 +47,18 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
       <header className="cafe-header">
         <h1 className="cafe-title">{cafe.title}</h1>
         <div className="cafe-actions">
-          <button className="maps-button" onClick={() => window.open(cafe.location?.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(cafe.title)}`, '_blank')}>
+          <button className="maps-button" onClick={() => window.open(cafe.location?.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(cafe.title || 'Cafe')}`, '_blank')}>
             <img src="/icons/map-pin.svg" alt="Location" className="button-icon" />
             View on Maps
           </button>
-          <button className="upvote-button" onClick={handleUpvote}>
-            <img src="/icons/upvote.svg" alt="Upvote" className="button-icon" />
-            Upvote ({cafe.upvotes})
-          </button>
+          <UpvoteButton
+            cafeId={cafe.id || 0}
+            initialUpvotes={cafe.upvotes || 0}
+            onUpvoteChange={(_, newUpvoteCount, updatedCafe) => {
+              // You could update the cafe state here if needed
+              console.log('Cafe upvoted to', newUpvoteCount, updatedCafe);
+            }}
+          />
         </div>
       </header>
 
@@ -71,7 +72,7 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
         <h2>Gallery</h2>
         <div className="gallery-main">
           <img 
-            src={cafe.gallery && cafe.gallery.length > 0 ? cafe.gallery[activeImageIndex] : cafe.image} 
+            src={cafe.gallery && cafe.gallery.length > 0 ? cafe.gallery[activeImageIndex] : (cafe.image || '/images/no-image.svg')} 
             alt={`${cafe.title} - Photo ${activeImageIndex + 1}`} 
             className="gallery-main-image" 
           />
@@ -80,14 +81,14 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
             <div className="gallery-navigation">
               <button 
                 className="gallery-nav-button"
-                onClick={() => setActiveImageIndex(prev => (prev === 0 ? cafe.gallery.length - 1 : prev - 1))}
+                onClick={() => setActiveImageIndex(prev => (prev === 0 ? (cafe.gallery?.length || 1) - 1 : prev - 1))}
                 aria-label="Previous photo"
               >
                 &#10094;
               </button>
               <button 
                 className="gallery-nav-button"
-                onClick={() => setActiveImageIndex(prev => (prev === cafe.gallery.length - 1 ? 0 : prev + 1))}
+                onClick={() => setActiveImageIndex(prev => (prev === (cafe.gallery?.length || 1) - 1 ? 0 : prev + 1))}
                 aria-label="Next photo"
               >
                 &#10095;

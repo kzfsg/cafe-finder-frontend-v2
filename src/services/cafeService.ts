@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { Cafe, Review } from '../data/cafes';
+import upvoteService from './upvoteService';
 
 // Base URL for Strapi API
 const API_URL = 'http://localhost:1337';
@@ -204,7 +205,7 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
     // Construct and return the cafe object with fallbacks for all properties
     const cafeObject = {
       id: id || 0,
-      title: attributes.Name || attributes.name || 'Unnamed Cafe',
+      Name: attributes.Name || attributes.name || 'Unnamed Cafe',
       image: mainImage,
       description: description || attributes.description || 'No description available',
       hasWifi: Boolean(filter.wifiSpeed) || attributes.hasWifi || false,
@@ -230,7 +231,7 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
     // Return a fallback cafe object if transformation fails
     return {
       id: 0,
-      title: 'Error Loading Cafe',
+      Name: 'Error Loading Cafe',
       image: 'https://via.placeholder.com/500x300?text=Error+Loading+Cafe',
       description: 'There was an error loading this cafe. Please try again later.',
       hasWifi: false,
@@ -251,25 +252,7 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
   }
 };
 
-// Get the current user's upvoted cafes
-const getUpvotedCafes = async (): Promise<number[]> => {
-  try {
-    const response = await api.get('/api/users/me?populate=upvotedCafes');
-    if (response.data && response.data.upvotedCafes) {
-      return response.data.upvotedCafes.map((cafe: any) => cafe.id);
-    }
-    return [];
-  } catch (error) {
-    console.error('Error fetching upvoted cafes:', error);
-    return [];
-  }
-};
-
-// Check if a cafe is upvoted by the current user
-export const isCafeUpvoted = async (cafeId: number): Promise<boolean> => {
-  const upvotedCafes = await getUpvotedCafes();
-  return upvotedCafes.includes(cafeId);
-};
+// Upvote functionality has been moved to upvoteService.ts
 
 const cafeService = {
   // Make the transform function available
@@ -341,96 +324,10 @@ const cafeService = {
     }
   },
   
-  // Upvote or remove upvote from a cafe
-  upvoteCafe: async (cafeId: number): Promise<{ success: boolean; upvoted: boolean; upvotes: number }> => {
-    try {
-      // Get initial user and cafe state
-      const [userResponse, initialCafeResponse] = await Promise.all([
-        api.get('/api/users/me'),
-        api.get(`/api/cafes?filters[id][$eq]=${cafeId}&populate=*`)
-      ]);
-      
-      const userId = userResponse.data?.id;
-      // Handle both array and direct object responses
-      const cafeData = Array.isArray(initialCafeResponse.data?.data) 
-        ? initialCafeResponse.data.data[0] 
-        : initialCafeResponse.data?.data || initialCafeResponse.data;
-      
-      if (!cafeData) {
-        console.error('No cafe data found in response:', initialCafeResponse, cafeId);
-        throw new Error('Cafe data not found in response');
-      }
-      
-      const documentId = cafeData.documentId;
-      const currentUpvotes = cafeData.upvotes || 0;
-      
-      if (!documentId) {
-        console.error('Document ID not found in cafe data:', cafeData);
-        throw new Error('Document ID not found for cafe');
-      }
-      
-      console.log('Initial user data:', userResponse.data);
-      console.log('Initial cafe data:', cafeData);
-      
-      // Toggle upvote
-      const currentlyUpvoted = await cafeService.isCafeUpvoted(cafeId);
-      const newUpvotes = currentlyUpvoted ? Math.max(0, currentUpvotes - 1) : currentUpvotes + 1;
-      
-      // Update user's upvoted cafes
-      const userEndpoint = `/api/users/${userId}`;
-      const userData = {
-        data: {
-          upvotedCafes: currentlyUpvoted ? 
-            { disconnect: [cafeId] } : 
-            { connect: [cafeId] }
-        }
-      };
-      
-      // Update cafe's upvote count using documentId
-      console.log(`Updating cafe ${documentId} with upvotes:`, newUpvotes);
-      await api.put(`/api/cafes/${documentId}`, { 
-        data: {
-        upvotes: newUpvotes
-      }
-      });
-      
-      // Update user's upvoted cafes
-      const toggleResponse = await api.put(userEndpoint, userData);
-      console.log('Upvote toggle response:', toggleResponse.status, toggleResponse.data);
-      
-      // Get updated cafe state
-      const updatedCafeResponse = await api.get(`/api/cafes/${documentId}`);
-      console.log('Updated cafe data:', updatedCafeResponse.data);
-      
-      const updatedCafe = updatedCafeResponse.data;
-      const upvotes = updatedCafe?.upvotes || newUpvotes; // Use newUpvotes as fallback
-      
-      return {
-        success: true,
-        upvoted: !currentlyUpvoted,
-        upvotes: upvotes
-      };
-      
-    } catch (error: any) {
-      console.error('Error in upvoteCafe:', {
-        message: error?.message || 'Unknown error',
-        response: error?.response?.data,
-        status: error?.response?.status
-      });
-      throw error;
-    }
-  },
-  
-  // Get upvoted cafes for the current user
-  async getUpvotedCafes(): Promise<number[]> {
-    return getUpvotedCafes();
-  },
-  
-  // Check if a cafe is upvoted by the current user
-  isCafeUpvoted: async (cafeId: number): Promise<boolean> => {
-    const upvotedCafes = await getUpvotedCafes();
-    return upvotedCafes.includes(cafeId);
-  }
+  // Upvote functionality has been moved to upvoteService.ts
+  upvoteCafe: (cafeId: number) => upvoteService.upvoteCafe(cafeId),
+  getUpvotedCafes: () => upvoteService.getUpvotedCafes(),
+  isCafeUpvoted: (cafeId: number) => upvoteService.isCafeUpvoted(cafeId)
 };
 
 export default cafeService;

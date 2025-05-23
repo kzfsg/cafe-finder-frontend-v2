@@ -168,13 +168,21 @@ function App() {
             <CafeCard
               key={cafe.id}
               id={cafe.id}
-              title={cafe.title}
-              image={cafe.image}
+              title={cafe.title || cafe.Name}
+              image={cafe.image || ''}
               images={cafe.gallery || []}
-              description={cafe.description}
-              hasWifi={cafe.hasWifi}
-              hasPower={cafe.hasPower}
-              upvotes={cafe.upvotes}
+              description={typeof cafe.description === 'string' ? cafe.description : 
+                (cafe.Description ? 
+                  // Extract text from Description array if it exists
+                  cafe.Description.map(block => 
+                    block.children?.map((child: any) => child.text || '').join('') || ''
+                  ).join(' ') : 
+                  'No description available'
+                )
+              }
+              hasWifi={cafe.hasWifi || false}
+              hasPower={cafe.hasPower || false}
+              upvotes={cafe.upvotes || 0}
               onClick={() => handleCafeClick(cafe)}
             />
           ))}

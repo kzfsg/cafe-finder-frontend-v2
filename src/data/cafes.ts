@@ -9,313 +9,218 @@ export interface Review {
 
 export interface Cafe {
   id: number;
-  title: string;
-  image: string;
-  description: string;
-  hasWifi: boolean;
-  hasPower: boolean;
-  upvotes: number;
-  location: {
-    address: string;
-    googleMapsUrl: string;
+  documentId?: string;
+  Name: string;  // From the data structure
+  title?: string;  // For compatibility with existing code
+  image?: string;  // For compatibility with existing code
+  Description?: any[];  // From the data structure
+  description?: string;  // For compatibility with existing code
+  hasWifi?: boolean;
+  hasPower?: boolean;
+  upvotes?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string | null;
+  Location?: {
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+    city?: string;
+    country?: string;
   };
-  amenities: {
-    openingHours: string;
-    seatingCapacity: string;
-    noiseLevel: string; // "Quiet", "Moderate", "Lively"
+  location?: {  // For compatibility with existing code
+    address?: string;
+    googleMapsUrl?: string;
   };
-  gallery: string[];
-  reviews: Review[];
+  amenities?: {
+    openingHours?: string;
+    seatingCapacity?: string;
+    noiseLevel?: string; // "Quiet", "Moderate", "Lively"
+  };
+  gallery?: string[];
+  reviews?: Review[];
 }
 
+// Sample cafes for testing
 export const cafes: Cafe[] = [
   {
-    id: 1,
-    title: "Cozy Corner Cafe",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    description: "A warm and inviting cafe with vintage decor and artisanal coffee.",
-    hasWifi: true,
-    hasPower: true,
-    upvotes: 42,
-    location: {
-      address: "123 Main Street, Downtown, City",
-      googleMapsUrl: "https://maps.google.com/?q=CozyCornerCafe"
-    },
-    amenities: {
-      openingHours: "Mon-Fri: 7:00 AM - 8:00 PM, Sat-Sun: 8:00 AM - 6:00 PM",
-      seatingCapacity: "30 seats",
-      noiseLevel: "Moderate"
-    },
-    gallery: [
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1513267048331-5611cad62e41?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1525610553991-2bede1a236e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    ],
-    reviews: [
-      {
-        id: 101,
-        userName: "Alex Johnson",
-        userImage: "https://randomuser.me/api/portraits/men/32.jpg",
-        rating: 5,
-        comment: "This is my go-to spot for working remotely. The wifi is reliable, plenty of outlets, and the coffee is excellent. Staff is always friendly and the atmosphere is perfect for focusing.",
-        date: "2025-04-15"
-      },
-      {
-        id: 102,
-        userName: "Sarah Miller",
-        userImage: "https://randomuser.me/api/portraits/women/44.jpg",
-        rating: 4,
-        comment: "Great place to work from! The only reason I'm not giving 5 stars is because it can get a bit crowded during peak hours. Otherwise, excellent coffee and amenities.",
-        date: "2025-03-22"
-      },
-      {
-        id: 103,
-        userName: "David Chen",
-        rating: 5,
-        comment: "Perfect ambiance for getting work done. Their pastries are amazing too - try the almond croissant!",
-        date: "2025-05-01"
-      }
+    id: 41,
+    documentId: "c1aqxne1sopus0a2b1330xlg",
+    Name: "Blackbird Coffee",
+            "Description": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": "Blackbird Coffee is a specialty coffee shop in Hanoi dedicated to Vietnamese coffee and coffee enthusiasts. It features a cozy, quiet ambiance with a blend of classic and modern design elements highlighted by its signature orange color scheme. The café offers a variety of brewing methods including espresso, pour-over, and traditional Vietnamese drip coffee. It is praised for excellent coffee quality, including egg coffee, and a selection of sweets and light meals. The space includes two floors with distinct atmospheres and a balcony with a street view, making it suitable for work, casual meetings, or relaxing. The staff is friendly and attentive, and the café is popular among locals and travelers alike."
+                        }
+                    ]
+                },
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": ""
+                        }
+                    ]
+                },
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": ""
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2025-05-21T07:03:17.084Z",
+            "updatedAt": "2025-05-23T08:04:50.209Z",
+            "publishedAt": "2025-05-23T08:04:50.220Z",
+            "Location": {
+                "latitude": 21.0289,
+                "longitude": 105.852,
+                "address": "5 Chân Cầm, Hàng Trống, Hoàn Kiếm, Hà Nội, Vietnam",
+                "city": "Hanoi",
+                "country": "Vietnam"
+            },
+            "upvotes": 4
+        },
+        {
+            "id": 42,
+            "documentId": "pq6o9ioduy1mh978abjckou5",
+            "Name": "Puku Cafe",
+            "Description": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": "Puku Cafe and Sports Bar in Hanoi, Vietnam, is a popular 24/7 venue located in the heart of the Old Quarter on Hanoi's Food Street. It offers a cozy and lively atmosphere suitable for a variety of occasions, including casual hangouts, working, watching sports, and group events."
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2025-05-13T10:12:18.368Z",
+            "updatedAt": "2025-05-23T08:12:19.292Z",
+            "publishedAt": "2025-05-23T08:12:19.325Z",
+            "Location": {
+                "latitude": 21.0293,
+                "longitude": 105.8435,
+                "address": "16-18 P. Tống Duy Tân, Hàng Bông, Hoàn Kiếm, Hà Nội",
+                "city": "Hanoi",
+                "country": "Vietnam"
+            },
+            "upvotes": 0
+        },
+        {
+            "id": 43,
+            "documentId": "okgah3bt5xbkutwf4g7m18gq",
+            "Name": "Ciara Terrace",
+            "Description": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": "Located in Cầu Giấy District, Ciara Terrace Cafe is a coffee shop and coworking space in one. It offers a generous menu including hot and iced coffee, cold brew tea, fruit smoothies, and seasonal food specials. The café provides remote workers with office supplies like staplers, notepads, and power sockets everywhere, making it highly convenient for work."
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2025-05-22T02:58:01.273Z",
+            "updatedAt": "2025-05-23T08:20:10.898Z",
+            "publishedAt": "2025-05-23T08:20:10.922Z",
+            "Location": {
+                "latitude": 21.025,
+                "longitude": 105.843,
+                "address": "342 Ba Trieu, Hanoi, Vietnam",
+                "city": "Hanoi",
+                "country": "Vietnam"
+            },
+            "upvotes": 4
+        },
+        {
+            "id": 44,
+            "documentId": "viscpvtvf2sbe8rc04aedjcz",
+            "Name": "HOON Cafe",
+            "Description": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": "HOON Cafe is a tranquil coffee spot in Ba Dinh district with a small but peaceful space. It features simple wooden furniture, a small garden area, and a balcony with airy views. The café offers a focused atmosphere with strong coffee aroma, ideal for peaceful work or study sessions."
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2025-05-22T03:01:58.366Z",
+            "updatedAt": "2025-05-23T08:23:07.945Z",
+            "publishedAt": "2025-05-23T08:23:07.953Z",
+            "Location": {
+                "latitude": 21.0425,
+                "longitude": 105.812,
+                "address": "40 Alley 267 Hoang Hoa Tham, Ba Dinh, Hanoi, Vietnam",
+                "city": "Hanoi",
+                "country": "Vietnam"
+            },
+            "upvotes": 4
+        },
+        {
+            "id": 45,
+            "documentId": "ilwut94x44ppewkwtsyr2xje",
+            "Name": "The Note Coffee",
+            "Description": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": "The Note Coffee is a charming, cozy cafe located near Hoan Kiem Lake, famous for its unique décor filled with colorful sticky notes left by visitors from around the world. It offers a warm and inviting atmosphere, perfect for working or relaxing. The cafe serves a variety of coffee drinks, teas, and light snacks. It has a quiet ambiance during weekdays, making it suitable for focused work or casual meetings."
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2025-05-22T03:06:24.103Z",
+            "updatedAt": "2025-05-23T08:26:58.056Z",
+            "publishedAt": "2025-05-23T08:26:58.070Z",
+            "Location": {
+                "latitude": 21.0285,
+                "longitude": 105.854,
+                "address": "64 Lương Văn Can, Hàng Trống, Hoàn Kiếm, Hà Nội, Vietnam",
+                "city": "Hanoi",
+                "country": "Vietnam"
+            },
+            "upvotes": 4
+        },
+        {
+            "id": 46,
+            "documentId": "tqmngkx13jgoj17yt07wp4ao",
+            "Name": "La Cherie Tây Hồ Tây",
+            "Description": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {
+                            "type": "text",
+                            "text": "La Cherie Tea & Coffee is known for its cozy and cute design, ideal for enjoying tea and coffee. It offers a spacious and comfortable space with various seating options suitable for groups and individuals working alone. The menu is rich with a variety of teas, coffee, and creative drinks, with high-quality beverages especially noted for flower teas and special coffee blends. The café features a sound system that helps customers and their pets relax. Staff are friendly and attentive, and prices are reasonable given the quality and service. It is located in an urban area, easily accessible, especially for residents of Hà Đông, making it a perfect spot for those seeking a quiet atmosphere and quality drinks."
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2025-05-21T06:37:39.581Z",
+            "updatedAt": "2025-05-23T08:37:32.761Z",
+            "publishedAt": "2025-05-23T08:37:32.776Z",
+            "Location": {
+                "latitude": 20.9831,
+                "longitude": 105.7645,
+                "address": "46 TT4A Khu Đô Thị Văn Quán, Hà Đông, Hà Nội",
+                "city": "Hanoi",
+                "country": "Vietnam"
+            },
+            "upvotes": 5
+        }
     ]
-  },
-  {
-    id: 2,
-    title: "Urban Brew",
-    image: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    description: "Modern minimalist cafe with specialty coffee and fresh pastries.",
-    hasWifi: true,
-    hasPower: false,
-    upvotes: 27,
-    location: {
-      address: "456 Urban Street, Downtown, City",
-      googleMapsUrl: "https://maps.google.com/?q=UrbanBrew"
-    },
-    amenities: {
-      openingHours: "Mon-Fri: 6:30 AM - 7:00 PM, Sat-Sun: 7:30 AM - 5:00 PM",
-      seatingCapacity: "25 seats",
-      noiseLevel: "Lively"
-    },
-    gallery: [
-      "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1513267048331-5611cad62e41?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    ],
-    reviews: [
-      {
-        id: 201,
-        userName: "Emily Parker",
-        userImage: "https://randomuser.me/api/portraits/women/23.jpg",
-        rating: 4,
-        comment: "Love the minimalist design and the coffee is top-notch. It can get quite busy and noisy during peak hours though.",
-        date: "2025-04-10"
-      },
-      {
-        id: 202,
-        userName: "Michael Wong",
-        userImage: "https://randomuser.me/api/portraits/men/54.jpg",
-        rating: 5,
-        comment: "Their specialty lattes are amazing! The baristas are true artists and the atmosphere is perfect for catching up with friends.",
-        date: "2025-03-15"
-      },
-      {
-        id: 203,
-        userName: "Jessica Taylor",
-        rating: 3,
-        comment: "Great coffee but limited seating and no power outlets was disappointing for someone looking to work.",
-        date: "2025-05-05"
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "Green Leaf Cafe",
-    image: "https://images.unsplash.com/photo-1525610553991-2bede1a236e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    description: "Eco-friendly cafe with plant-based options and sustainable practices.",
-    hasWifi: false,
-    hasPower: true,
-    upvotes: 18,
-    location: {
-      address: "789 Eco Avenue, Green District, City",
-      googleMapsUrl: "https://maps.google.com/?q=GreenLeafCafe"
-    },
-    amenities: {
-      openingHours: "Mon-Sun: 8:00 AM - 6:00 PM",
-      seatingCapacity: "20 seats",
-      noiseLevel: "Quiet"
-    },
-    gallery: [
-      "https://images.unsplash.com/photo-1525610553991-2bede1a236e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    ],
-    reviews: [
-      {
-        id: 301,
-        userName: "Olivia Green",
-        userImage: "https://randomuser.me/api/portraits/women/67.jpg",
-        rating: 5,
-        comment: "As a vegan, I appreciate their extensive plant-based menu. The atmosphere is so peaceful and their commitment to sustainability is impressive.",
-        date: "2025-04-22"
-      },
-      {
-        id: 302,
-        userName: "Ryan Martinez",
-        userImage: "https://randomuser.me/api/portraits/men/41.jpg",
-        rating: 4,
-        comment: "Great eco-friendly concept and delicious food. Would be perfect if they had wifi for working.",
-        date: "2025-03-30"
-      },
-      {
-        id: 303,
-        userName: "Sophia Lee",
-        rating: 5,
-        comment: "The most peaceful cafe in the city! Their matcha latte is exceptional and I love their zero-waste approach.",
-        date: "2025-05-12"
-      }
-    ]
-  },
-  {
-    id: 4,
-    title: "Book & Brew",
-    image: "https://images.unsplash.com/photo-1445116572660-236099ec97a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    description: "A quiet cafe with an extensive book collection and premium teas.",
-    hasWifi: true,
-    hasPower: true,
-    upvotes: 35,
-    location: {
-      address: "321 Literary Lane, Cultural District, City",
-      googleMapsUrl: "https://maps.google.com/?q=BookAndBrew"
-    },
-    amenities: {
-      openingHours: "Mon-Fri: 8:00 AM - 9:00 PM, Sat-Sun: 9:00 AM - 10:00 PM",
-      seatingCapacity: "40 seats",
-      noiseLevel: "Quiet"
-    },
-    gallery: [
-      "https://images.unsplash.com/photo-1445116572660-236099ec97a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1525610553991-2bede1a236e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    ],
-    reviews: [
-      {
-        id: 401,
-        userName: "Benjamin Wright",
-        userImage: "https://randomuser.me/api/portraits/men/76.jpg",
-        rating: 5,
-        comment: "Heaven for book lovers! I can spend hours here reading and sipping their excellent tea selection. The staff recommendations for books are always spot on.",
-        date: "2025-04-05"
-      },
-      {
-        id: 402,
-        userName: "Hannah Kim",
-        userImage: "https://randomuser.me/api/portraits/women/33.jpg",
-        rating: 5,
-        comment: "Perfect study spot with reliable wifi and plenty of outlets. The quiet atmosphere is exactly what I need to focus on my work.",
-        date: "2025-03-18"
-      },
-      {
-        id: 403,
-        userName: "Thomas Brown",
-        rating: 4,
-        comment: "Great selection of books and teas. The only downside is that it can be hard to find seating on weekends because it's so popular.",
-        date: "2025-05-08"
-      }
-    ]
-  },
-  {
-    id: 5,
-    title: "Seaside Sips",
-    image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    description: "Beachfront cafe offering refreshing drinks and ocean views.",
-    hasWifi: false,
-    hasPower: false,
-    upvotes: 12,
-    location: {
-      address: "42 Beach Road, Coastal District, City",
-      googleMapsUrl: "https://maps.google.com/?q=SeasideSips"
-    },
-    amenities: {
-      openingHours: "Mon-Sun: 9:00 AM - 7:00 PM (Extended to 9:00 PM during summer)",
-      seatingCapacity: "35 seats (plus 15 outdoor seats)",
-      noiseLevel: "Moderate"
-    },
-    gallery: [
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1513267048331-5611cad62e41?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    ],
-    reviews: [
-      {
-        id: 501,
-        userName: "Mia Johnson",
-        userImage: "https://randomuser.me/api/portraits/women/12.jpg",
-        rating: 5,
-        comment: "The view alone is worth 5 stars! Their fruit smoothies are incredible and there's nothing better than watching the sunset here with a drink in hand.",
-        date: "2025-04-18"
-      },
-      {
-        id: 502,
-        userName: "James Wilson",
-        userImage: "https://randomuser.me/api/portraits/men/22.jpg",
-        rating: 3,
-        comment: "Beautiful location but service can be slow during busy times. Also, no wifi or power makes it difficult for working.",
-        date: "2025-03-25"
-      },
-      {
-        id: 503,
-        userName: "Lily Chen",
-        rating: 4,
-        comment: "Perfect spot for relaxation! Their signature coconut cold brew is amazing. Just wish they were open later in the evening.",
-        date: "2025-05-10"
-      }
-    ]
-  },
-  {
-    id: 6,
-    title: "Artisan's Cup",
-    image: "https://images.unsplash.com/photo-1513267048331-5611cad62e41?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    description: "Showcasing local art and serving handcrafted beverages.",
-    hasWifi: true,
-    hasPower: true,
-    upvotes: 31,
-    location: {
-      address: "567 Gallery Street, Arts District, City",
-      googleMapsUrl: "https://maps.google.com/?q=ArtisansCup"
-    },
-    amenities: {
-      openingHours: "Tue-Sun: 10:00 AM - 8:00 PM, Closed on Mondays",
-      seatingCapacity: "28 seats",
-      noiseLevel: "Moderate"
-    },
-    gallery: [
-      "https://images.unsplash.com/photo-1513267048331-5611cad62e41?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1445116572660-236099ec97a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    ],
-    reviews: [
-      {
-        id: 601,
-        userName: "Noah Adams",
-        userImage: "https://randomuser.me/api/portraits/men/65.jpg",
-        rating: 5,
-        comment: "Such a unique concept! I love how they feature a different local artist each month. The atmosphere is inspiring and their signature lavender latte is exceptional.",
-        date: "2025-04-12"
-      },
-      {
-        id: 602,
-        userName: "Emma Rodriguez",
-        userImage: "https://randomuser.me/api/portraits/women/89.jpg",
-        rating: 4,
-        comment: "Great spot for creative types. The art is always interesting and they host wonderful events. Wish they had more food options though.",
-        date: "2025-03-20"
-      },
-      {
-        id: 603,
-        userName: "Lucas Thompson",
-        rating: 5,
-        comment: "Perfect blend of art and coffee culture. I come here whenever I need inspiration for my own work. The staff is knowledgeable about both coffee and art!",
-        date: "2025-05-15"
-      }
-    ]
-  }
-];
