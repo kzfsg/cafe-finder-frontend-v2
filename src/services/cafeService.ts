@@ -252,11 +252,11 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
 };
 
 // Get the current user's upvoted cafes
-const getUpvotedCafes = async (): Promise<Array<{ documentId: number | string }>> => {
+const getUpvotedCafes = async (): Promise<number[]> => {
   try {
     const response = await api.get('/api/users/me?populate=upvotedCafes');
-    if (response.data?.upvotedCafes) {
-      return response.data.upvotedCafes;
+    if (response.data && response.data.upvotedCafes) {
+      return response.data.upvotedCafes.map((cafe: any) => cafe.id);
     }
     return [];
   } catch (error) {
@@ -266,10 +266,9 @@ const getUpvotedCafes = async (): Promise<Array<{ documentId: number | string }>
 };
 
 // Check if a cafe is upvoted by the current user
-export const isCafeUpvoted = async (cafeId: string | number): Promise<boolean> => {
+export const isCafeUpvoted = async (cafeId: number): Promise<boolean> => {
   const upvotedCafes = await getUpvotedCafes();
-  // Handle both string and number IDs by converting to string for comparison
-  return upvotedCafes.some(cafe => String(cafe.documentId) === String(cafeId));
+  return upvotedCafes.includes(cafeId);
 };
 
 const cafeService = {
@@ -341,7 +340,97 @@ const cafeService = {
       return [];
     }
   },
-
+  
+  // Upvote or remove upvote from a cafe
+  upvoteCafe: async (cafeId: number): Promise<{ success: boolean; upvoted: boolean; upvotes: number }> => {
+    try {
+      // Get initial user and cafe state
+      const [userResponse, initialCafeResponse] = await Promise.all([
+        api.get('/api/users/me'),
+        api.get(`/api/cafes?filters[id][$eq]=${cafeId}&populate=*`)
+      ]);
+      
+      const userId = userResponse.data?.id;
+      // Handle both array and direct object responses
+      const cafeData = Array.isArray(initialCafeResponse.data?.data) 
+        ? initialCafeResponse.data.data[0] 
+        : initialCafeResponse.data?.data || initialCafeResponse.data;
+      
+      if (!cafeData) {
+        console.error('No cafe data found in response:', initialCafeResponse, cafeId);
+        throw new Error('Cafe data not found in response');
+      }
+      
+      const documentId = cafeData.documentId;
+      const currentUpvotes = cafeData.upvotes || 0;
+      
+      if (!documentId) {
+        console.error('Document ID not found in cafe data:', cafeData);
+        throw new Error('Document ID not found for cafe');
+      }
+      
+      console.log('Initial user data:', userResponse.data);
+      console.log('Initial cafe data:', cafeData);
+      
+      // Toggle upvote
+      const currentlyUpvoted = await cafeService.isCafeUpvoted(cafeId);
+      const newUpvotes = currentlyUpvoted ? Math.max(0, currentUpvotes - 1) : currentUpvotes + 1;
+      
+      // Update user's upvoted cafes
+      const userEndpoint = `/api/users/${userId}`;
+      const userData = {
+        data: {
+          upvotedCafes: currentlyUpvoted ? 
+            { disconnect: [cafeId] } : 
+            { connect: [cafeId] }
+        }
+      };
+      
+      // Update cafe's upvote count using documentId
+      console.log(`Updating cafe ${documentId} with upvotes:`, newUpvotes);
+      await api.put(`/api/cafes/${documentId}`, { 
+        data: {
+        upvotes: newUpvotes
+      }
+      });
+      
+      // Update user's upvoted cafes
+      const toggleResponse = await api.put(userEndpoint, userData);
+      console.log('Upvote toggle response:', toggleResponse.status, toggleResponse.data);
+      
+      // Get updated cafe state
+      const updatedCafeResponse = await api.get(`/api/cafes/${documentId}`);
+      console.log('Updated cafe data:', updatedCafeResponse.data);
+      
+      const updatedCafe = updatedCafeResponse.data;
+      const upvotes = updatedCafe?.upvotes || newUpvotes; // Use newUpvotes as fallback
+      
+      return {
+        success: true,
+        upvoted: !currentlyUpvoted,
+        upvotes: upvotes
+      };
+      
+    } catch (error: any) {
+      console.error('Error in upvoteCafe:', {
+        message: error?.message || 'Unknown error',
+        response: error?.response?.data,
+        status: error?.response?.status
+      });
+      throw error;
+    }
+  },
+  
+  // Get upvoted cafes for the current user
+  async getUpvotedCafes(): Promise<number[]> {
+    return getUpvotedCafes();
+  },
+  
+  // Check if a cafe is upvoted by the current user
+  isCafeUpvoted: async (cafeId: number): Promise<boolean> => {
+    const upvotedCafes = await getUpvotedCafes();
+    return upvotedCafes.includes(cafeId);
+  }
 };
 
 export default cafeService;

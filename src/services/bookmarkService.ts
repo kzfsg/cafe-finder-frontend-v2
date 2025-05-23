@@ -78,17 +78,8 @@ const bookmarkService = {
         return [];
       }
       
-      // Transform each cafe to our application format and ensure documentId is included
-      return bookmarkedCafes.map((cafe: any) => {
-        const transformedCafe = transformCafeData(cafe);
-        // Ensure documentId is preserved if it exists in the original data
-        if (cafe.documentId) {
-          transformedCafe.documentId = cafe.documentId;
-        } else if (cafe.attributes?.documentId) {
-          transformedCafe.documentId = cafe.attributes.documentId;
-        }
-        return transformedCafe;
-      });
+      // Transform each cafe to our application format using the imported function
+      return bookmarkedCafes.map((cafe: Cafe) => transformCafeData(cafe));
     } catch (error: any) {
       console.error('Error fetching bookmarked cafes:', error);
       console.error('Error details:', error.response?.data || error.message);
@@ -99,13 +90,13 @@ const bookmarkService = {
   /**
    * Check if a cafe is bookmarked by the current user
    */
-  isBookmarked: async (documentId: string): Promise<boolean> => {
+  isBookmarked: async (cafeId: number): Promise<boolean> => {
     if (!authService.isLoggedIn()) {
       return false;
     }
     
     try {
-      console.log(`Checking if cafe ${documentId} is bookmarked...`);
+      console.log(`Checking if cafe ${cafeId} is bookmarked...`);
       // Get user with bookmarked cafes
       const response = await api.get('/users/me?populate=bookmarkedCafes');
       
@@ -121,9 +112,9 @@ const bookmarkService = {
         return false;
       }
       
-      // Check if the cafe documentId is in the list of bookmarked cafes
-      const isBookmarked = bookmarkedCafes.some((cafe: any) => cafe.documentId === documentId);
-      console.log(`Cafe ${documentId} is bookmarked: ${isBookmarked}`);
+      // Check if the cafe ID is in the list of bookmarked cafes
+      const isBookmarked = bookmarkedCafes.some((cafe: any) => cafe.id === cafeId);
+      console.log(`Cafe ${cafeId} is bookmarked: ${isBookmarked}`);
       return isBookmarked;
     } catch (error: any) {
       console.error('Error checking bookmark status:', error);
@@ -134,7 +125,7 @@ const bookmarkService = {
   /**
    * Toggle bookmark status for a cafe
    */
-  toggleBookmark: async (documentId: string): Promise<BookmarkResponse> => {
+  toggleBookmark: async (cafeId: number): Promise<BookmarkResponse> => {
     if (!authService.isLoggedIn()) {
       return { bookmarked: false, message: 'You must be logged in to bookmark cafes' };
     }
@@ -148,7 +139,7 @@ const bookmarkService = {
       
       // First, get the current user's bookmarked cafes
       const currentBookmarks = await bookmarkService.getBookmarkedCafes();
-      const isCurrentlyBookmarked = currentBookmarks.some(cafe => cafe.documentId === documentId);
+      const isCurrentlyBookmarked = currentBookmarks.some(cafe => cafe.id === cafeId);
       
       // Determine the action based on current bookmark status
       if (isCurrentlyBookmarked) {
@@ -156,17 +147,17 @@ const bookmarkService = {
         await api.patch(`/users/${userId}`, {
           data: {
             bookmarkedCafes: {
-              disconnect: [{ documentId }]
+              disconnect: [{ id: cafeId }]
             }
           }
         });
-        console.log(`Removed cafe ${documentId} from bookmarks`);
+        console.log(`Removed cafe ${cafeId} from bookmarks`);
         return { bookmarked: false, message: 'Cafe removed from bookmarks' };
       } else {
         // Find the cafe object in currentBookmarks to get the full reference
-        const cafe = currentBookmarks.find(c => c.documentId === documentId);
+        const cafe = currentBookmarks.find(c => c.id === cafeId);
         if (!cafe) {
-          console.error('Cafe not found in current bookmarks:', documentId);
+          console.error('Cafe not found in current bookmarks:', cafeId);
           return { bookmarked: false, message: 'Cafe not found' };
         }
         
@@ -174,11 +165,11 @@ const bookmarkService = {
         await api.patch(`/users/${userId}`, {
           data: {
             bookmarkedCafes: {
-              connect: [{ documentId }]
+              connect: [{ id: cafeId }]
             }
           }
         });
-        console.log(`Added cafe ${documentId} to bookmarks, current bookmarks:`, currentBookmarks);
+        console.log(`Added cafe ${cafeId} to bookmarks, current bookmarks:`, currentBookmarks);
         return { bookmarked: true, message: 'Cafe added to bookmarks' };
       }
     } catch (error: any) {

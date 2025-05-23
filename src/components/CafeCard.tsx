@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import BookmarkButton from './BookmarkButton';
-import UpvoteButton from './UpvoteButton';
+import cafeService from '../services/cafeService';
 
 interface CafeCardProps {
-  documentId: string;
+  id?: number;
   title: string;
   image: string;
   images?: string[];
@@ -11,19 +11,35 @@ interface CafeCardProps {
   hasWifi?: boolean;
   hasPower?: boolean;
   upvotes?: number;
-  onUpvote?: (documentId: string, newUpvotes: number) => void;
+  onUpvote?: (id: number, newUpvotes: number) => void;
   onClick?: () => void;
 }
 
-export default function CafeCard({ documentId, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
-  // Keep track of upvotes for the card
+export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
+  const [isUpvoted, setIsUpvoted] = useState(false);
+  const [isUpvoting, setIsUpvoting] = useState(false);
   const [currentUpvotes, setCurrentUpvotes] = useState(upvotes);
+  
+  // Check if cafe is upvoted on component mount
+  useEffect(() => {
+    const checkUpvoteStatus = async () => {
+      if (id) {
+        try {
+          const upvoted = await cafeService.isCafeUpvoted(id);
+          setIsUpvoted(upvoted);
+        } catch (error) {
+          console.error('Error checking upvote status:', error);
+        }
+      }
+    };
+    
+    checkUpvoteStatus();
+  }, [id]);
   
   // Update local upvote count when prop changes
   useEffect(() => {
     setCurrentUpvotes(upvotes);
   }, [upvotes]);
-  
   // Default image placeholder (using local SVG instead of external service)
   const defaultImage = '/images/no-image.svg';
   
@@ -36,21 +52,19 @@ export default function CafeCard({ documentId, title, image, images = [], descri
   // Combine the main image with additional images if provided
   const allImages = safeImages.length > 0 ? [safeMainImage, ...safeImages] : [safeMainImage];
   
-  // Get unique images to avoid duplicates
-  const uniqueImages = Array.from(new Set(allImages));
+  // Use only unique images
+  const uniqueImages = [...new Set(allImages)];
   
-  // State for tracking current image index and hover state
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [isHovering, setIsHovering] = useState<boolean>(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
   const intervalRef = useRef<number | null>(null);
   
   // Start auto-scrolling when hovering
   useEffect(() => {
     if (isHovering && uniqueImages.length > 1) {
-      const nextImage = () => {
-        setCurrentImageIndex((prevIndex: number) => (prevIndex + 1) % (safeImages.length + 1));
-      };
-      intervalRef.current = window.setInterval(nextImage, 1200); // Change image every 1.2 seconds
+      intervalRef.current = window.setInterval(() => {
+        setCurrentImageIndex(prevIndex => (prevIndex + 1) % uniqueImages.length);
+      }, 1200); // Change image every 1.2 seconds
     } else {
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
@@ -92,7 +106,7 @@ export default function CafeCard({ documentId, title, image, images = [], descri
         ))}
         
         {/* Bookmark button */}
-        <BookmarkButton documentId={documentId} />
+        <BookmarkButton cafeId={id} />
         
         {uniqueImages.length > 1 && (
           <div className="gallery-indicators">
@@ -121,16 +135,39 @@ export default function CafeCard({ documentId, title, image, images = [], descri
                 </div>
               )}
             </div>
-            <UpvoteButton 
-              documentId={documentId}
-              initialUpvotes={currentUpvotes}
-              onUpvote={(docId, newUpvotes) => {
-                setCurrentUpvotes(newUpvotes);
-                if (onUpvote) {
-                  onUpvote(docId, newUpvotes);
+            <button 
+              className={`upvote-button ${isUpvoted ? 'upvoted' : ''} ${isUpvoting ? 'loading' : ''}`}
+              onClick={async (e) => {
+                e.stopPropagation(); // Prevent card click
+                if (isUpvoting || !id) return;
+                
+                setIsUpvoting(true);
+                try {
+                  const result = await cafeService.upvoteCafe(id);
+                  if (result) {
+                    setIsUpvoted(result.upvoted);
+                    setCurrentUpvotes(result.upvotes);
+                    if (onUpvote) {
+                      onUpvote(id, result.upvotes);
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error toggling upvote:', error);
+                } finally {
+                  setIsUpvoting(false);
                 }
               }}
-            />
+              title={isUpvoted ? 'Remove upvote' : 'Upvote this cafe'}
+              disabled={isUpvoting}
+              aria-busy={isUpvoting}
+            >
+              <img 
+                src="/icons/upvote.svg" 
+                alt="Upvote" 
+                className={`upvote-icon ${isUpvoted ? 'active' : ''} ${isUpvoting ? 'loading' : ''}`} 
+              />
+              <span className="upvotes-count">{currentUpvotes}</span>
+            </button>
           </div>
         </div>
         <p className="cafe-description">
