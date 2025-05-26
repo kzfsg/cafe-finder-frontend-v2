@@ -1,6 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import authService from '../services/authService';
-import type { User } from '../services/authService';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import authService, { type User } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -16,14 +15,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
+  // Memoized function to check auth state
+  const checkAuth = useCallback(() => {
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+    setIsAuthenticated(!!currentUser);
+  }, []);
+
   // Initialize auth state from localStorage on component mount
   useEffect(() => {
-    const checkAuth = () => {
-      const currentUser = authService.getCurrentUser();
-      setUser(currentUser);
-      setIsAuthenticated(!!currentUser);
-    };
-
     checkAuth();
     
     // Listen for storage events (for multi-tab support)
@@ -35,9 +35,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [checkAuth]);
 
   const login = (userData: User) => {
+    if (!userData || !userData.id || !userData.email) {
+      console.error('Invalid user data provided to login:', userData);
+      return;
+    }
     setUser(userData);
     setIsAuthenticated(true);
   };
@@ -54,9 +58,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (userData) {
         setUser(userData);
         setIsAuthenticated(true);
+      } else {
+        // If refresh fails, clear auth state
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
+      setUser(null);
+      setIsAuthenticated(false);
     }
   };
 

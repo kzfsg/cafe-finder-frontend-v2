@@ -41,14 +41,24 @@ const Login = () => {
       const response = await authService.login(formData);
       
       // Update auth context with the user data
-      login(response.user);
-      
-      // Redirect to the original page or home
-      navigate(from);
+      if (response && response.user) {
+        // Ensure the user data matches our User type
+        const userData = response.user;
+        if (userData && userData.id && userData.email) {
+          login(userData);
+          
+          // Redirect to the original page or home
+          navigate(from);
+        } else {
+          throw new Error('Invalid user data received from server');
+        }
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(
-        err.response?.data?.error?.message || 
+        err.message || 
         'Invalid credentials or server error'
       );
     } finally {
@@ -60,7 +70,7 @@ const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/favicon.svg" alt="Nomadic logo" className="auth-logo" />
+          <img src="favicon.svg" alt="Nomadic logo" className="auth-logo" />
           <h2>Welcome back</h2>
           <p>Log in to your Nomadic account</p>
         </div>

@@ -54,14 +54,25 @@ const SignUp = () => {
       const response = await authService.register(registerData);
       
       // Update auth context with the user data
-      login(response.user);
-      
-      // Redirect to the original page or home
-      navigate(from);
+      if (response && response.user) {
+        // Ensure the user data matches our User type
+        const userData = response.user;
+        if (userData && userData.id && userData.email) {
+          login(userData);
+          
+          // Redirect to the original page or home
+          navigate(from);
+        } else {
+          throw new Error('Invalid user data received from server');
+        }
+      } else {
+        // For Supabase, this might mean the confirmation email was sent
+        setError('Please check your email to confirm your registration.');
+      }
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(
-        err.response?.data?.error?.message || 
+        err.message || 
         'Registration failed. Please try again.'
       );
     } finally {
@@ -73,7 +84,7 @@ const SignUp = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/favicon.svg" alt="Nomadic logo" className="auth-logo" />
+          <img src="favicon.svg" alt="Nomadic logo" className="auth-logo" />
           <h2>Create your account</h2>
           <p>Join Nomadic to find the best work-friendly cafes</p>
         </div>
