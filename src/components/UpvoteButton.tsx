@@ -3,9 +3,9 @@ import upvoteService from '../services/upvoteService';
 import type { Cafe } from '../data/cafes';
 
 interface UpvoteButtonProps {
-  cafeId: number;
+  cafeId: string;
   initialUpvotes?: number;
-  onUpvoteChange?: (id: number, newUpvotes: number, cafe: Cafe) => void;
+  onUpvoteChange?: (id: string, newUpvotes: number, cafe: Cafe) => void;
 }
 
 const UpvoteButton: React.FC<UpvoteButtonProps> = ({ 
@@ -40,11 +40,17 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
 
   const handleUpvote = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent element click
-    if (isUpvoting || !cafeId) return;
+    console.log('Upvote button clicked with cafeId:', cafeId);
+    if (isUpvoting || !cafeId) {
+      console.log('Upvote aborted: isUpvoting=', isUpvoting, 'cafeId=', cafeId);
+      return;
+    }
     
     setIsUpvoting(true);
     try {
-      const result = await upvoteService.upvoteCafe(cafeId);
+      console.log('Calling upvoteService.upvoteCafe with cafeId:', cafeId);
+      const result = await upvoteService.upvoteCafe(cafeId); // calls upvoteCafe
+      console.log('Upvote result:', result);
       if (result) {
         setIsUpvoted(result.upvoted);
         setUpvotes(result.upvotes);

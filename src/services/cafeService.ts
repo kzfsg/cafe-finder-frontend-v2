@@ -61,6 +61,7 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
       // Standard Strapi v4 format
       id = strapiCafe.id;
       attributes = strapiCafe.attributes;
+      console.log(strapiCafe.attributes);
     } else if (strapiCafe.id !== undefined && !strapiCafe.attributes) {
       // Data might be flattened
       id = strapiCafe.id;
@@ -205,6 +206,7 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
     // Construct and return the cafe object with fallbacks for all properties
     const cafeObject = {
       id: id || 0,
+      documentId: attributes.documentId || strapiCafe.documentId || '',
       Name: attributes.Name || attributes.name || 'Unnamed Cafe',
       image: mainImage,
       description: description || attributes.description || 'No description available',
@@ -231,8 +233,9 @@ export const transformCafeData = (strapiCafe: any): Cafe => {
     // Return a fallback cafe object if transformation fails
     return {
       id: 0,
+      documentId: '',
       Name: 'Error Loading Cafe',
-      image: 'https://via.placeholder.com/500x300?text=Error+Loading+Cafe',
+      image: '/images/no-image.svg', // Using local fallback image as per memory fd2f9ba9-e9eb-40b3-b22e-266146d74e52
       description: 'There was an error loading this cafe. Please try again later.',
       hasWifi: false,
       hasPower: false,
@@ -325,9 +328,9 @@ const cafeService = {
   },
   
   // Upvote functionality has been moved to upvoteService.ts
-  upvoteCafe: (cafeId: number) => upvoteService.upvoteCafe(cafeId),
+  upvoteCafe: (cafeId: string) => upvoteService.upvoteCafe(cafeId),
   getUpvotedCafes: () => upvoteService.getUpvotedCafes(),
-  isCafeUpvoted: (cafeId: number) => upvoteService.isCafeUpvoted(cafeId)
+  isCafeUpvoted: (cafeId: string) => upvoteService.isCafeUpvoted(cafeId)
 };
 
 export default cafeService;

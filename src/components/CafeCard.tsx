@@ -5,6 +5,7 @@ import type { Cafe } from '../data/cafes';
 
 interface CafeCardProps {
   id?: number;
+  documentId?: string;
   title: string;
   image: string;
   images?: string[];
@@ -12,11 +13,11 @@ interface CafeCardProps {
   hasWifi?: boolean;
   hasPower?: boolean;
   upvotes?: number;
-  onUpvote?: (id: number, newUpvotes: number, cafe: Cafe) => void;
+  onUpvote?: (id: string, newUpvotes: number, cafe: Cafe) => void;
   onClick?: () => void;
 }
 
-export default function CafeCard({ id = 0, title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, documentId = '', title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
   // No need for upvote state management here - moved to UpvoteButton component
   // Default image placeholder (using local SVG instead of external service)
   const defaultImage = '/images/no-image.svg';
@@ -114,7 +115,7 @@ export default function CafeCard({ id = 0, title, image, images = [], descriptio
               )}
             </div>
             <UpvoteButton 
-              cafeId={id} 
+              cafeId={documentId} 
               initialUpvotes={upvotes} 
               onUpvoteChange={onUpvote} 
             />

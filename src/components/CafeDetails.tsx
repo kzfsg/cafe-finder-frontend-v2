@@ -52,7 +52,7 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
             View on Maps
           </button>
           <UpvoteButton
-            cafeId={cafe.id || 0}
+            cafeId={cafe.documentId || ''}
             initialUpvotes={cafe.upvotes || 0}
             onUpvoteChange={(_, newUpvoteCount, updatedCafe) => {
               // You could update the cafe state here if needed

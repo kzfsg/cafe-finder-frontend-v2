@@ -168,6 +168,7 @@ function App() {
             <CafeCard
               key={cafe.id}
               id={cafe.id}
+              documentId={cafe.documentId || ''}
               title={cafe.title || cafe.Name}
               image={cafe.image || ''}
               images={cafe.gallery || []}
