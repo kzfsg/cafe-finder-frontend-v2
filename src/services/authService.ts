@@ -51,44 +51,50 @@ const authService = {
         options: {
           data: {
             username: data.username,
+            email: data.email
           }
         }
       });
 
       if (error) throw error;
 
-      // If email confirmation is required, we might not get a session back
-      if (!authData.user) {
+      // If we have a user, the profile will be created by the trigger
+      if (authData.user) {
+        // If we have a session, log the user in
+        if (authData.session) {
+          // Get the full user profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+
+          const userData: User = {
+            id: authData.user.id,
+            email: authData.user.email || '',
+            username: profileData?.username || data.username || authData.user.email?.split('@')[0] || '',
+            created_at: authData.user.created_at || new Date().toISOString(),
+            avatar_url: profileData?.avatar_url || null,
+          };
+          
+          // Store session and user data in localStorage
+          localStorage.setItem('jwt', authData.session.access_token);
+          localStorage.setItem('user', JSON.stringify(userData));
+          
+          return {
+            user: userData,
+            jwt: authData.session.access_token
+          };
+        }
+        
+        // If no session (email confirmation required)
         return { 
           user: null, 
           message: 'Please check your email to confirm your registration.' 
         };
       }
-
-      // If we have a session and user, process the login
-      if (authData.session) {
-        // Format user data to match our User interface
-        if (!authData.user.email) {
-          throw new Error('User email is required');
-        }
-        
-        const userData: User = {
-          id: authData.user.id,
-          email: authData.user.email,
-          username: data.username || authData.user.email.split('@')[0],
-          created_at: authData.user.created_at || new Date().toISOString(),
-          avatar_url: authData.user.user_metadata?.avatar_url,
-        };
-        
-        // Store session and user data in localStorage
-        localStorage.setItem('jwt', authData.session.access_token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        return {
-          user: userData,
-          jwt: authData.session.access_token
-        };
-      }
+      
+      throw new Error('Registration failed');
       
       // If we get here, it means the user needs to confirm their email
       return { 
@@ -210,43 +216,25 @@ const authService = {
         return null;
       }
       
-      // Ensure we have the required user data
-      if (!user.email) {
-        console.error('User email is missing');
-        return null;
+      // Get the user's profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
       }
-      
-      // Get additional user metadata if needed
-      let userMetadata = null;
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        userMetadata = data;
-      } catch (error) {
-        // Silently handle error if profiles table doesn't exist or query fails
-        console.debug('Error fetching user metadata:', error);
-      }
-      
-      const username = user.user_metadata?.username || 
-                     userMetadata?.username || 
-                     user.email.split('@')[0];
-      
-      const avatarUrl = user.user_metadata?.avatar_url || 
-                      userMetadata?.avatar_url;
       
       // Format user data to match our User interface
       const formattedUser: User = {
         id: user.id,
-        email: user.email,
-        username,
+        email: user.email || '',
+        username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0] || '',
         created_at: user.created_at || new Date().toISOString(),
         updated_at: user.updated_at,
-        avatar_url: avatarUrl,
-        // Add any additional fields from your user_metadata or profiles table
-        ...(user.user_metadata || {})
+        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || null,
       };
       
       // Update localStorage with fresh user data
