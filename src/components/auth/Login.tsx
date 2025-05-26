@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import authService, { type LoginData } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
@@ -8,8 +7,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [formData, setFormData] = useState<LoginData>({
-    identifier: '',
+  const [formData, setFormData] = useState({
+    email: '',
     password: ''
   });
   const [error, setError] = useState<string>('');
@@ -31,36 +30,34 @@ const Login = () => {
     setError('');
     
     // Form validation
-    if (!formData.identifier || !formData.password) {
+    if (!formData.email || !formData.password) {
       setError('All fields are required');
       return;
     }
     
     try {
       setLoading(true);
-      const response = await authService.login(formData);
       
-      // Update auth context with the user data
-      if (response && response.user) {
-        // Ensure the user data matches our User type
-        const userData = response.user;
-        if (userData && userData.id && userData.email) {
-          login(userData);
-          
-          // Redirect to the original page or home
-          navigate(from);
-        } else {
-          throw new Error('Invalid user data received from server');
-        }
+      // Use the login function from AuthContext
+      const user = await login(formData.email, formData.password);
+      
+      if (user) {
+        // Redirect to the original page or home
+        navigate(from);
       } else {
         setError('Login failed. Please check your credentials.');
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(
-        err.message || 
-        'Invalid credentials or server error'
-      );
+      
+      // Handle Supabase specific errors
+      if (err.code === 'auth/invalid-email' || err.code === 'auth/user-not-found') {
+        setError('No account found with this email address');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password');
+      } else {
+        setError(err.message || 'Invalid credentials or server error');
+      }
     } finally {
       setLoading(false);
     }
@@ -79,14 +76,15 @@ const Login = () => {
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="identifier">Email or Username</label>
+            <label htmlFor="email">Email</label>
             <input
-              type="text"
-              id="identifier"
-              name="identifier"
-              value={formData.identifier}
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email or username"
+              placeholder="Enter your email address"
+              required
             />
           </div>
           

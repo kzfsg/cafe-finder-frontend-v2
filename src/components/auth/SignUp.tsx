@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import authService, { type RegisterData } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
 const SignUp = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
-  const [formData, setFormData] = useState<RegisterData & { confirmPassword: string }>({
+  const { register } = useAuth();
+  const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
@@ -50,31 +49,36 @@ const SignUp = () => {
     
     try {
       setLoading(true);
-      const { confirmPassword, ...registerData } = formData;
-      const response = await authService.register(registerData);
       
-      // Update auth context with the user data
-      if (response && response.user) {
-        // Ensure the user data matches our User type
-        const userData = response.user;
-        if (userData && userData.id && userData.email) {
-          login(userData);
-          
-          // Redirect to the original page or home
-          navigate(from);
-        } else {
-          throw new Error('Invalid user data received from server');
-        }
+      // Use the register function from AuthContext
+      const result = await register(
+        formData.username,
+        formData.email,
+        formData.password
+      );
+      
+      if (result.user) {
+        // Registration successful and user is logged in
+        navigate(from);
+      } else if (result.message) {
+        // Email confirmation required or other message
+        setError(result.message);
       } else {
-        // For Supabase, this might mean the confirmation email was sent
-        setError('Please check your email to confirm your registration.');
+        setError('Registration failed. Please try again.');
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(
-        err.message || 
-        'Registration failed. Please try again.'
-      );
+      
+      // Handle Supabase specific errors
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak');
+      } else {
+        setError(err.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

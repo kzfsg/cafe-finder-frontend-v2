@@ -45,16 +45,16 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
       
       {/* Main Header Section */}
       <header className="cafe-header">
-        <h1 className="cafe-title">{cafe.title}</h1>
+        <h1 className="cafe-title">{cafe.title || cafe.name || 'Unnamed Cafe'}</h1>
         <div className="cafe-actions">
-          <button className="maps-button" onClick={() => window.open(cafe.location?.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(cafe.title || 'Cafe')}`, '_blank')}>
+          <button className="maps-button" onClick={() => window.open(`https://maps.google.com/maps/search/?api=1&query=${encodeURIComponent(`${cafe.location?.address || ''}, ${cafe.location?.city || ''}, ${cafe.location?.country || ''}`)}`, '_blank')}>
             <img src="/icons/map-pin.svg" alt="Location" className="button-icon" />
             View on Maps
           </button>
           <UpvoteButton
-            cafeId={cafe.documentId || ''}
-            initialUpvotes={cafe.upvotes || 0}
-            onUpvoteChange={(_, newUpvoteCount, updatedCafe) => {
+            cafeId={cafe.id}
+            upvotes={cafe.upvotes || 0}
+            onUpvote={(_, newUpvoteCount, updatedCafe) => {
               // You could update the cafe state here if needed
               console.log('Cafe upvoted to', newUpvoteCount, updatedCafe);
             }}
@@ -117,11 +117,11 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
         <div className="amenities-grid">
           <div className="amenity-item">
             <img src="/icons/wifi.svg" alt="WiFi" className="amenity-icon" />
-            <span>{cafe.hasWifi ? 'WiFi Available' : 'No WiFi'}</span>
+            <span>{cafe.wifi ? 'WiFi Available' : 'No WiFi'}</span>
           </div>
           <div className="amenity-item">
             <img src="/icons/power.svg" alt="Power" className="amenity-icon" />
-            <span>{cafe.hasPower ? 'Power Outlets' : 'No Power Outlets'}</span>
+            <span>{cafe.powerOutletAvailable ? 'Power Outlets' : 'No Power Outlets'}</span>
           </div>
           <div className="amenity-item">
             <img src="/icons/clock.svg" alt="Hours" className="amenity-icon" />

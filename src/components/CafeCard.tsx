@@ -6,18 +6,23 @@ import type { Cafe } from '../data/cafes';
 interface CafeCardProps {
   id?: number;
   documentId?: string;
-  title: string;
-  image: string;
+  title?: string;
+  name?: string; // New Supabase field
+  image?: string;
   images?: string[];
-  description: string;
+  description?: string;
   hasWifi?: boolean;
   hasPower?: boolean;
+  wifi?: boolean; // New Supabase field
+  powerOutletAvailable?: boolean; // New Supabase field
   upvotes?: number;
-  onUpvote?: (id: string, newUpvotes: number, cafe: Cafe) => void;
+  onUpvote?: (id: number, newUpvotes: number, cafe: Cafe) => void;
   onClick?: () => void;
 }
 
-export default function CafeCard({ id = 0, documentId = '', title, image, images = [], description, hasWifi = false, hasPower = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, title, name, image, images = [], description, hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
+  // Use name as title if title is not provided (for Supabase compatibility)
+  const displayTitle = title || name || 'Unnamed Cafe';
   // No need for upvote state management here - moved to UpvoteButton component
   // Default image placeholder (using local SVG instead of external service)
   const defaultImage = '/images/no-image.svg';
@@ -87,6 +92,9 @@ export default function CafeCard({ id = 0, documentId = '', title, image, images
         {/* Bookmark button */}
         <BookmarkButton cafeId={id} />
         
+        {/* Upvote button */}
+        <UpvoteButton cafeId={id} upvotes={upvotes} />
+        
         {uniqueImages.length > 1 && (
           <div className="gallery-indicators">
             {uniqueImages.map((_, index) => (
@@ -100,33 +108,35 @@ export default function CafeCard({ id = 0, documentId = '', title, image, images
       </div>
       <div className="cafe-content">
         <div className="cafe-header">
-          <h3 className="cafe-title">{title}</h3>
+          <h3 className="cafe-title">{displayTitle}</h3>
           <div className="cafe-meta">
-            <div className="cafe-amenities">
-              {hasWifi && (
-                <div className="amenity wifi" title="WiFi Available">
-                  <img src="/icons/wifi.svg" alt="WiFi" />
-                </div>
-              )}
-              {hasPower && (
-                <div className="amenity power" title="Power Outlets Available">
-                  <img src="/icons/power.svg" alt="Power Outlets" />
-                </div>
-              )}
+            <div className={`amenity wifi ${hasWifi || wifi ? 'available' : 'unavailable'}`}>
+              <img 
+                src="/icons/wifi.svg" 
+                alt="WiFi" 
+                className="amenity-icon" 
+              />
+            </div>
+            <div className={`amenity power ${hasPower || powerOutletAvailable ? 'available' : 'unavailable'}`}>
+              <img 
+                src="/icons/power.svg" 
+                alt="Power Outlets" 
+                className="amenity-icon" 
+              />
             </div>
             <UpvoteButton 
-              cafeId={documentId} 
-              initialUpvotes={upvotes} 
-              onUpvoteChange={onUpvote} 
+              cafeId={id} 
+              upvotes={upvotes} 
+              onUpvote={onUpvote as ((id: number, newUpvotes: number, cafe: Cafe) => void)}
             />
           </div>
         </div>
         <p className="cafe-description">
           {typeof description === 'string' 
-            ? description 
-            : description && typeof description === 'object' 
-              ? 'No description available' // Fallback for object descriptions
-              : 'No description available'}
+            ? description.length > 120 
+              ? `${description.substring(0, 120)}...` 
+              : description
+            : 'No description available'}
         </p>
       </div>
     </div>

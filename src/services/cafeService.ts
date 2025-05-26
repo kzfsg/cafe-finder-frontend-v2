@@ -1,336 +1,332 @@
-import axios, { AxiosError } from 'axios';
-import type { Cafe, Review } from '../data/cafes';
-import upvoteService from './upvoteService';
+import { supabase } from '../supabase-client';
+import type { Cafe, CafeLocation } from '../data/cafes';
 
-// Base URL for Strapi API
-const API_URL = 'http://localhost:1337';
+// Supabase table names
+const CAFES_TABLE = 'cafes';
 
-// Log the API URL for debugging
-console.log('Using API URL:', API_URL);
+// Log configuration for debugging
+console.log('Using Supabase for cafe data');
 
-// Create an axios instance with default config
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add request interceptor to include auth token if available
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('jwt');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Helper function to handle Supabase errors
+const handleSupabaseError = (error: any, context: string) => {
+  console.error(`Supabase error (${context}):`, error.message);
+  if (error.details) {
+    console.error('Details:', error.details);
   }
-  return config;
-});
-
-// Add response interceptor for better error handling
-api.interceptors.response.use(
-  response => response,
-  (error: AxiosError) => {
-    // Log detailed error information for debugging
-    console.error('API Error:', error.message);
-    if (error.response) {
-      console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    }
-    return Promise.reject(error);
+  if (error.hint) {
+    console.error('Hint:', error.hint);
   }
-);
+  return Promise.reject(error);
+};
 
-// Transform Strapi cafe data to our application's Cafe format
+// Ensure image URLs are properly formatted
+const ensureFullImageUrl = (imageUrl: string | null | undefined): string => {
+  if (!imageUrl) return '/images/placeholder.svg';
+  
+  // If it's already a full URL or a local path starting with '/'
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('/')) {
+    return imageUrl;
+  }
+  
+  // Otherwise, assume it's a relative path and add the base URL
+  return `/images/${imageUrl}`;
+};
+
+// Transform Supabase cafe data to our application's Cafe format
 // Export this so it can be used by other services
-export const transformCafeData = (strapiCafe: any): Cafe => {
+export const transformCafeData = (supaCafe: any): Cafe => {
   try {
-    console.log('Transforming cafe data:', strapiCafe);
+    console.log('Transforming Supabase cafe data:', supaCafe);
     
     // Handle both single item and collection responses
     // First, check if we're dealing with a valid object
-    if (!strapiCafe || typeof strapiCafe !== 'object') {
-      console.error('Invalid cafe data:', strapiCafe);
+    if (!supaCafe || typeof supaCafe !== 'object') {
+      console.error('Invalid cafe data:', supaCafe);
       throw new Error('Invalid cafe data');
     }
     
-    // Extract id and attributes, handling different possible structures
-    let id, attributes;
-    
-    if (strapiCafe.id !== undefined && strapiCafe.attributes) {
-      // Standard Strapi v4 format
-      id = strapiCafe.id;
-      attributes = strapiCafe.attributes;
-      console.log(strapiCafe.attributes);
-    } else if (strapiCafe.id !== undefined && !strapiCafe.attributes) {
-      // Data might be flattened
-      id = strapiCafe.id;
-      attributes = strapiCafe;
-    } else {
-      console.error('Could not extract id and attributes from:', strapiCafe);
-      throw new Error('Invalid cafe data structure');
+    // For Supabase, the data structure is flatter than Strapi
+    // We need to ensure we have the basic required fields
+    if (supaCafe.id === undefined) {
+      console.error('Missing required id field:', supaCafe);
+      throw new Error('Invalid cafe data: missing id');
     }
     
-    console.log('Extracted id:', id, 'and attributes:', attributes);
-    
-    // Extract photos/gallery images with careful error handling
-    let gallery: string[] = [];
-    try {
-      // Handle different possible structures for photos
-      let photos = [];
-      
-      if (Array.isArray(attributes.Photos)) {
-        // Photos might be directly an array
-        photos = attributes.Photos;
-      } else if (attributes.Photos?.data && Array.isArray(attributes.Photos.data)) {
-        // Standard Strapi v4 format with data property
-        photos = attributes.Photos.data;
-      } else if (attributes.Photos) {
-        // Some other structure, try to handle it
-        console.log('Unexpected Photos structure:', attributes.Photos);
-        photos = [attributes.Photos];
-      }
-      
-      // Process each photo to get the URL
-      gallery = photos.map((photo: any) => {
-        if (!photo) return null;
-        
-        // Try different paths to find the URL
-        let photoUrl = null;
-        if (photo.attributes?.url) {
-          photoUrl = photo.attributes.url;
-        } else if (photo.url) {
-          photoUrl = photo.url;
-        } else if (typeof photo === 'string') {
-          photoUrl = photo;
-        }
-        
-        if (!photoUrl) return null;
-        
-        // Handle both absolute and relative URLs
-        return photoUrl.startsWith('http') ? photoUrl : `${API_URL}${photoUrl}`;
-      }).filter(Boolean); // Remove any null entries
-      
-      console.log('Processed gallery:', gallery);
-    } catch (e) {
-      console.warn('Error processing photos:', e);
-      gallery = [];
-    }
-    
-    // Get the main image (first photo or placeholder)
-    const mainImage = gallery.length > 0 
-      ? gallery[0] 
-      : 'https://via.placeholder.com/500x300?text=No+Image';
-    
-    // Extract filter data for amenities with fallbacks
-    interface FilterData {
-      wifiSpeed?: number | string | null;
-      powerOutletAvailable?: boolean;
-      seatingCapacity?: string;
-      noiseLevel?: string;
-      [key: string]: any;
-    }
-    
-    let filter: FilterData = {};
-    try {
-      if (Array.isArray(attributes.Filter) && attributes.Filter.length > 0) {
-        filter = attributes.Filter[0] || {};
-      } else if (attributes.Filter && typeof attributes.Filter === 'object') {
-        filter = attributes.Filter;
-      }
-      console.log('Processed filter data:', filter);
-    } catch (e) {
-      console.warn('Error processing filter data:', e);
-      filter = {};
-    }
-    
-    // We're using the imported Review interface
-
-    // Extract reviews with careful error handling
-    const reviews: Array<Review> = [];
-    try {
-      if (attributes.reviews?.data) {
-        attributes.reviews.data.forEach((review: any) => {
-          if (!review || !review.attributes) return;
-          
-          let commentText = '';
-          try {
-            if (Array.isArray(review.attributes.Review)) {
-              commentText = review.attributes.Review
-                .map((block: any) => {
-                  if (!block || !Array.isArray(block.children)) return '';
-                  return block.children
-                    .map((child: any) => child?.text || '')
-                    .join('');
-                })
-                .join(' ');
-            }
-          } catch (e) {
-            console.warn('Error parsing review text:', e);
-          }
-          
-          // Convert string IDs to numbers for compatibility with Review interface
-          const reviewId = typeof review.id === 'string' ? parseInt(review.id, 10) || Math.floor(Math.random() * 10000) : review.id || Math.floor(Math.random() * 10000);
-          
-          reviews.push({
-            id: reviewId,
-            userName: review.attributes.Headline || 'Anonymous',
-            rating: review.attributes.Rating || 5,
-            comment: commentText || 'No comment provided',
-            date: review.attributes.Date || new Date().toISOString().split('T')[0]
-          });
-        });
-      }
-    } catch (e) {
-      console.warn('Error processing reviews:', e);
-    }
-
-    // Extract description text with careful error handling
-    let description = '';
-    try {
-      if (Array.isArray(attributes.Description)) {
-        description = attributes.Description
-          .map((block: any) => {
-            if (!block || !Array.isArray(block.children)) return '';
-            return block.children
-              .map((child: any) => child?.text || '')
-              .join('');
-          })
-          .join(' ');
-      }
-    } catch (e) {
-      console.warn('Error parsing description:', e);
-      description = attributes.Name || 'No description available';
-    }
-
-    // Construct and return the cafe object with fallbacks for all properties
-    const cafeObject = {
-      id: id || 0,
-      documentId: attributes.documentId || strapiCafe.documentId || '',
-      Name: attributes.Name || attributes.name || 'Unnamed Cafe',
-      image: mainImage,
-      description: description || attributes.description || 'No description available',
-      hasWifi: Boolean(filter.wifiSpeed) || attributes.hasWifi || false,
-      hasPower: Boolean(filter.powerOutletAvailable) || attributes.hasPower || false,
-      upvotes: filter.upvotes ?? 0, // Use upvotes from API, default to 0 if null/undefined
-      location: {
-        address: attributes.Location?.address || attributes.location?.address || 'Address not available',
-        googleMapsUrl: attributes.location?.googleMapsUrl || `https://maps.google.com/?q=${attributes.Location?.latitude || 0},${attributes.Location?.longitude || 0}`
-      },
-      amenities: {
-        openingHours: attributes.amenities?.openingHours || 'Not specified',
-        seatingCapacity: filter.seatingCapacity || attributes.amenities?.seatingCapacity || 'Not specified',
-        noiseLevel: filter.noiseLevel || attributes.amenities?.noiseLevel || 'Not specified'
-      },
-      gallery: gallery || attributes.gallery || [],
-      reviews: reviews || attributes.reviews || []
+    // Parse location data which is stored as a JSON string in Supabase
+    let locationData: CafeLocation = {
+      city: '',
+      address: '',
+      country: ''
     };
     
-    console.log('Transformed cafe object:', cafeObject);
-    return cafeObject;
+    try {
+      // Location might be a string (JSON) or already an object
+      if (typeof supaCafe.location === 'string') {
+        locationData = JSON.parse(supaCafe.location);
+      } else if (supaCafe.location && typeof supaCafe.location === 'object') {
+        locationData = supaCafe.location;
+      }
+    } catch (error) {
+      console.error('Error parsing location data:', error);
+      // Keep the default empty location
+    }
+    
+    // Generate a Google Maps URL from the location data
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${locationData.address || ''}, ${locationData.city || ''}, ${locationData.country || ''}`
+    )}`;
+    
+    // Handle image URL - ensure it's a full URL
+    const imageUrl = ensureFullImageUrl(supaCafe.image);
+    
+    // Create a gallery array from the main image and any additional images
+    const gallery: string[] = [];
+    if (imageUrl) gallery.push(imageUrl);
+    
+    // Add any additional images from the gallery field if it exists
+    if (supaCafe.gallery && Array.isArray(supaCafe.gallery)) {
+      supaCafe.gallery.forEach((img: string) => {
+        if (img) gallery.push(ensureFullImageUrl(img));
+      });
+    }
+    
+    // Construct the final cafe object with all the extracted data
+    // Use default values for any missing properties to prevent undefined errors
+    const cafe: Cafe = {
+      // Primary Supabase fields
+      id: supaCafe.id || 0,
+      created_at: supaCafe.created_at || new Date().toISOString(),
+      name: supaCafe.name || 'Unknown Cafe',
+      description: supaCafe.description || 'No description available',
+      location: locationData,
+      wifi: Boolean(supaCafe.wifi),
+      powerOutletAvailable: Boolean(supaCafe.powerOutletAvailable),
+      seatingCapacity: supaCafe.seatingCapacity || '',
+      noiseLevel: supaCafe.noiseLevel || '',
+      priceRange: supaCafe.priceRange || '',
+      upvotes: supaCafe.upvotes || 0,
+      downvotes: supaCafe.downvotes || 0,
+      
+      // Legacy fields for compatibility
+      documentId: supaCafe.documentId || `cafe-${supaCafe.id}`,
+      Name: supaCafe.name || 'Unknown Cafe',
+      title: supaCafe.name || 'Unknown Cafe',
+      image: imageUrl,
+      Description: [{ 
+        type: 'paragraph', 
+        children: [{ 
+          type: 'text', 
+          text: supaCafe.description || 'No description available' 
+        }] 
+      }],
+      hasWifi: Boolean(supaCafe.wifi),
+      hasPower: Boolean(supaCafe.powerOutletAvailable),
+      createdAt: supaCafe.created_at || new Date().toISOString(),
+      updatedAt: supaCafe.updated_at || new Date().toISOString(),
+      Location: {
+        latitude: locationData.latitude || 0,
+        longitude: locationData.longitude || 0,
+        address: locationData.address || '',
+        city: locationData.city || '',
+        country: locationData.country || ''
+      },
+      location_legacy: {
+        address: locationData.address || '',
+        googleMapsUrl: googleMapsUrl
+      },
+      gallery: gallery,
+      reviews: supaCafe.reviews || []
+    };
+    
+    console.log('Transformed cafe:', cafe);
+    return cafe;
   } catch (error) {
     console.error('Error transforming cafe data:', error);
-    // Return a fallback cafe object if transformation fails
+    // Return a minimal valid cafe object to prevent crashes
     return {
       id: 0,
-      documentId: '',
-      Name: 'Error Loading Cafe',
-      image: '/images/no-image.svg', // Using local fallback image as per memory fd2f9ba9-e9eb-40b3-b22e-266146d74e52
+      created_at: new Date().toISOString(),
+      name: 'Error Loading Cafe',
       description: 'There was an error loading this cafe. Please try again later.',
-      hasWifi: false,
-      hasPower: false,
-      upvotes: 0,
       location: {
-        address: 'Not available',
-        googleMapsUrl: ''
+        city: '',
+        address: '',
+        country: ''
       },
-      amenities: {
-        openingHours: 'Not specified',
-        seatingCapacity: 'Not specified',
-        noiseLevel: 'Not specified'
-      },
-      gallery: [],
-      reviews: []
+      wifi: false,
+      powerOutletAvailable: false,
+      upvotes: 0,
+      downvotes: 0,
+      
+      // Legacy fields
+      Name: 'Error Loading Cafe',
+      image: '/images/placeholder.svg',
+      hasWifi: false,
+      hasPower: false
     };
   }
 };
 
-// Upvote functionality has been moved to upvoteService.ts
-
 const cafeService = {
   // Make the transform function available
   transformCafeData,
-
   
   // Get all cafes
   getAllCafes: async (): Promise<Cafe[]> => {
     try {
-      console.log('Fetching all cafes...');
+      console.log('Fetching all cafes from Supabase...');
+      const { data: cafesData, error } = await supabase
+        .from(CAFES_TABLE)
+        .select('*')
+        .order('name');
       
-      // First try to fetch from the API
-      try {
-        const response = await api.get('/api/cafes?populate=*');
-        console.log('API Response:', response.data);
-        
-        if (response.data && response.data.data && Array.isArray(response.data.data)) {
-          const strapiCafes = response.data.data;
-          if (strapiCafes.length > 0) {
-            return strapiCafes.map(transformCafeData).filter(Boolean);
-          }
-        }
-        
-        console.warn('API returned no valid cafes, falling back to static data');
-        throw new Error('No cafes found in API response');
-      } catch (apiError) {
-        // If API fails, fall back to static data
-        console.warn('Falling back to static data due to API error');
-        const staticData = require('../data/staticCafes.json');
-        return staticData;
+      if (error) {
+        return handleSupabaseError(error, 'getAllCafes');
       }
-    } catch (error: any) {
-      console.error('Error in getAllCafes:', error);
-      // Last resort fallback - return empty array
+      
+      if (!cafesData || cafesData.length === 0) {
+        console.log('No cafes found');
+        return [];
+      }
+      
+      // Transform each cafe to our application format
+      const cafes = cafesData.map(transformCafeData);
+      console.log(`Fetched ${cafes.length} cafes`);
+      return cafes;
+    } catch (error) {
+      console.error('Error fetching cafes:', error);
       return [];
     }
   },
-
+  
   // Get cafe by ID
   getCafeById: async (id: number): Promise<Cafe | null> => {
     try {
-      console.log(`Fetching cafe with ID ${id}...`);
-      const response = await api.get(`/api/cafes/${id}?populate=*`);
-      console.log('Cafe details response:', response.data);
+      console.log(`Fetching cafe with ID ${id} from Supabase...`);
+      const { data: cafeData, error } = await supabase
+        .from(CAFES_TABLE)
+        .select('*')
+        .eq('id', id)
+        .single();
       
-      if (!response.data || !response.data.data) {
-        console.error('Invalid API response structure for cafe details:', response.data);
+      if (error) {
+        return handleSupabaseError(error, `getCafeById-${id}`);
+      }
+      
+      if (!cafeData) {
+        console.error('No data returned for cafe ID:', id);
         return null;
       }
       
-      return transformCafeData(response.data.data);
-    } catch (error: any) {
+      // Transform the cafe data to our application format
+      return transformCafeData(cafeData);
+    } catch (error) {
       console.error(`Error fetching cafe with ID ${id}:`, error);
-      console.error('Error details:', error.response?.data || error.message);
       return null;
     }
   },
-
+  
   // Search cafes by query
-  async searchCafes(query: string): Promise<Cafe[]> {
+  searchCafes: async (query: string): Promise<Cafe[]> => {
     try {
-      // Using Strapi's filter to search by name
-      const response = await api.get(`/api/cafes?populate=*&filters[Name][$containsi]=${query}`);
-      const strapiCafes = response.data.data;
-      return strapiCafes.map(transformCafeData);
+      console.log(`Searching cafes with query: ${query}`);
+      const { data: cafesData, error } = await supabase
+        .from(CAFES_TABLE)
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+        .order('name');
+      
+      if (error) {
+        return handleSupabaseError(error, `searchCafes-${query}`);
+      }
+      
+      if (!cafesData || cafesData.length === 0) {
+        console.log('No cafes found matching query:', query);
+        return [];
+      }
+      
+      // Transform each cafe to our application format
+      return cafesData.map(transformCafeData);
     } catch (error) {
       console.error('Error searching cafes:', error);
       return [];
     }
   },
   
-  // Upvote functionality has been moved to upvoteService.ts
-  upvoteCafe: (cafeId: string) => upvoteService.upvoteCafe(cafeId),
-  getUpvotedCafes: () => upvoteService.getUpvotedCafes(),
-  isCafeUpvoted: (cafeId: string) => upvoteService.isCafeUpvoted(cafeId)
+  // Upvote a cafe
+  upvoteCafe: async (cafeId: number): Promise<boolean> => {
+    try {
+      // First get the current upvote count
+      const { data: cafeData, error: getError } = await supabase
+        .from(CAFES_TABLE)
+        .select('upvotes')
+        .eq('id', cafeId)
+        .single();
+      
+      if (getError) {
+        return handleSupabaseError(getError, `upvoteCafe-get-${cafeId}`);
+      }
+      
+      if (!cafeData) {
+        console.error('No cafe found with ID:', cafeId);
+        return false;
+      }
+      
+      // Increment the upvote count
+      const newUpvotes = (cafeData.upvotes || 0) + 1;
+      
+      // Update the cafe with the new upvote count
+      const { error: updateError } = await supabase
+        .from(CAFES_TABLE)
+        .update({ upvotes: newUpvotes })
+        .eq('id', cafeId);
+      
+      if (updateError) {
+        return handleSupabaseError(updateError, `upvoteCafe-update-${cafeId}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Error upvoting cafe with ID ${cafeId}:`, error);
+      return false;
+    }
+  },
+  
+  // Get upvoted cafes - this would require a separate table for user upvotes
+  // For now, we'll just return all cafes with upvotes > 0
+  getUpvotedCafes: async (): Promise<Cafe[]> => {
+    try {
+      console.log('Fetching upvoted cafes...');
+      const { data: cafesData, error } = await supabase
+        .from(CAFES_TABLE)
+        .select('*')
+        .gt('upvotes', 0)
+        .order('upvotes', { ascending: false });
+      
+      if (error) {
+        return handleSupabaseError(error, 'getUpvotedCafes');
+      }
+      
+      if (!cafesData || cafesData.length === 0) {
+        console.log('No upvoted cafes found');
+        return [];
+      }
+      
+      // Transform each cafe to our application format
+      return cafesData.map(transformCafeData);
+    } catch (error) {
+      console.error('Error fetching upvoted cafes:', error);
+      return [];
+    }
+  },
+  
+  // Check if a cafe is upvoted - implemented in upvoteService
+  isCafeUpvoted: async (cafeId: number): Promise<boolean> => {
+    // This functionality is now implemented in upvoteService
+    // Importing it here would create a circular dependency
+    // This method is kept for API compatibility
+    return false;
+  }
 };
 
 export default cafeService;

@@ -1,17 +1,16 @@
 import { supabase } from '../supabase-client';
-
-// No need for axios or API configuration as we're using Supabase client
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 // Interface for user registration data
-export interface RegisterData {
+interface RegisterData {
   username: string;
   email: string;
   password: string;
 }
 
 // Interface for login data
-export interface LoginData {
-  identifier: string; // Strapi uses 'identifier' for username/email
+interface LoginData {
+  identifier: string; // Email
   password: string;
 }
 
@@ -27,18 +26,32 @@ type User = {
   [key: string]: any; // For other properties that might be returned
 };
 
-// This ensures we're exporting the type
-export type { User };
+// Interface for auth state change callback
+type AuthChangeCallback = (event: string, session: Session | null) => void;
 
-// Type guard to check if an object is our User type
-const isUser = (obj: any): obj is User => {
-  return (
-    obj && 
-    typeof obj.id === 'string' && 
-    typeof obj.email === 'string' &&
-    typeof obj.created_at === 'string'
-  );
-}
+// This ensures we're exporting the type
+export type { User, AuthChangeCallback };
+
+// Convert Supabase user to our User type
+const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
+  if (!supabaseUser || !supabaseUser.email) return null;
+  
+  // Get profile data from profiles table
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', supabaseUser.id)
+    .single();
+  
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email,
+    username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0],
+    created_at: supabaseUser.created_at || new Date().toISOString(),
+    updated_at: profile?.updated_at || supabaseUser.updated_at,
+    avatar_url: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url,
+  };
+};
 
 // Authentication service methods
 const authService = {
@@ -57,49 +70,14 @@ const authService = {
       });
 
       if (error) throw error;
-
-      // If we have a user, the profile will be created by the trigger
-      if (authData.user) {
-        // If we have a session, log the user in
-        if (authData.session) {
-          // Get the full user profile
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', authData.user.id)
-            .single();
-
-          const userData: User = {
-            id: authData.user.id,
-            email: authData.user.email || '',
-            username: profileData?.username || data.username || authData.user.email?.split('@')[0] || '',
-            created_at: authData.user.created_at || new Date().toISOString(),
-            avatar_url: profileData?.avatar_url || null,
-          };
-          
-          // Store session and user data in localStorage
-          localStorage.setItem('jwt', authData.session.access_token);
-          localStorage.setItem('user', JSON.stringify(userData));
-          
-          return {
-            user: userData,
-            jwt: authData.session.access_token
-          };
-        }
-        
-        // If no session (email confirmation required)
-        return { 
-          user: null, 
-          message: 'Please check your email to confirm your registration.' 
-        };
-      }
       
-      throw new Error('Registration failed');
+      // The user object is available immediately, but might need email confirmation
+      const formattedUser = await formatUser(authData.user);
       
-      // If we get here, it means the user needs to confirm their email
-      return { 
-        user: null, 
-        message: 'Please check your email to confirm your registration.' 
+      return {
+        user: formattedUser,
+        session: authData.session,
+        message: !authData.session ? 'Please check your email to confirm your registration.' : undefined
       };
     } catch (error) {
       console.error('Registration error:', error);
@@ -121,26 +99,12 @@ const authService = {
         throw new Error('No session or user data returned');
       }
       
-      // Format user data to match our User interface
-      if (!authData.user.email) {
-        throw new Error('User email is required');
-      }
-      
-      const userData: User = {
-        id: authData.user.id,
-        email: authData.user.email,
-        username: authData.user.user_metadata?.username || authData.user.email.split('@')[0],
-        created_at: authData.user.created_at || new Date().toISOString(),
-        avatar_url: authData.user.user_metadata?.avatar_url,
-      };
-      
-      // Store session and user data in localStorage
-      localStorage.setItem('jwt', authData.session.access_token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      // Format and return user data
+      const formattedUser = await formatUser(authData.user);
       
       return {
-        user: userData,
-        jwt: authData.session.access_token
+        user: formattedUser,
+        session: authData.session
       };
     } catch (error) {
       console.error('Login error:', error);
@@ -153,97 +117,78 @@ const authService = {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
-      localStorage.removeItem('jwt');
-      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
     }
   },
   
-  // Get current user from localStorage
-  getCurrentUser: (): User | null => {
-    if (typeof window === 'undefined') return null;
-    
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    
+  // Get current session
+  getSession: async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Error getting session:', error);
+      return null;
+    }
+    return session;
+  },
+  
+  // Get current user
+  getCurrentUser: async (): Promise<User | null> => {
     try {
-      const user = JSON.parse(userStr);
-      if (!isUser(user)) {
-        console.warn('Invalid user data in localStorage');
-        return null;
-      }
-      return user;
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return null;
+      
+      return formatUser(user);
     } catch (error) {
-      console.error('Error parsing user data:', error);
+      console.error('Error getting current user:', error);
       return null;
     }
   },
   
   // Check if user is logged in
-  isLoggedIn: (): boolean => {
-    return !!localStorage.getItem('jwt');
+  isLoggedIn: async (): Promise<boolean> => {
+    const session = await authService.getSession();
+    return !!session;
   },
 
   // Get user's profile picture
-  getUserAvatar: (user: User): string => {
+  getUserAvatar: (user: User | null): string => {
     // If user has an avatar, return the URL, otherwise return default avatar
     return user?.avatar_url || 'icons/default-avatar.svg';
   },
   
-  // Get the current user with fresh data from Supabase
-  refreshUserData: async (): Promise<User | null> => {
+  // Subscribe to auth state changes
+  onAuthStateChange: (callback: AuthChangeCallback) => {
+    return supabase.auth.onAuthStateChange(callback);
+  },
+  
+  // Update user profile
+  updateProfile: async (updates: Partial<User>): Promise<User | null> => {
     try {
-      // First, check if we have a valid session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('No active session:', sessionError);
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('user');
-        return null;
-      }
-      
-      // Get the current user's data
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        console.error('Error getting user data:', userError);
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('user');
-        return null;
+        throw new Error('User not authenticated');
       }
-      
-      // Get the user's profile data
-      const { data: profile, error: profileError } = await supabase
+
+      // Update the profile in the profiles table
+      const { error: updateError } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-      }
-      
-      // Format user data to match our User interface
-      const formattedUser: User = {
-        id: user.id,
-        email: user.email || '',
-        username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0] || '',
-        created_at: user.created_at || new Date().toISOString(),
-        updated_at: user.updated_at,
-        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || null,
-      };
-      
-      // Update localStorage with fresh user data
-      localStorage.setItem('user', JSON.stringify(formattedUser));
-      
-      return formattedUser;
+        .update({
+          username: updates.username,
+          avatar_url: updates.avatar_url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Get the updated user data
+      return formatUser(user);
     } catch (error) {
-      console.error('Error refreshing user data:', error);
-      return null;
+      console.error('Error updating profile:', error);
+      throw error;
     }
   }
 };

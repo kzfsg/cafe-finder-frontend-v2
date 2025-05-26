@@ -1,88 +1,107 @@
-import axios from 'axios';
+import { supabase } from '../supabase-client';
 import authService from './authService';
 import type { Cafe } from '../data/cafes';
-import { transformCafeData } from './cafeService';
 
-// Base URL for Strapi API - exactly matching cafeService
-const API_URL = 'http://localhost:1337';
-const API_ENDPOINT = `${API_URL}/api`;
+// Table name for bookmarks in Supabase
+const BOOKMARKS_TABLE = 'bookmarks';
 
-// Create an axios instance with default config
-const api = axios.create({
-  baseURL: API_ENDPOINT,
-  headers: {
-    'Content-Type': 'application/json'
+// Helper function to handle Supabase errors
+const handleSupabaseError = (error: any, context: string) => {
+  console.error(`Supabase error (${context}):`, error.message);
+  if (error.details) {
+    console.error('Details:', error.details);
   }
-});
-
-// Add interceptor to include auth token in requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('jwt');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Add response interceptor for better error handling
-api.interceptors.response.use(
-  response => response,
-  (error) => {
-    console.error('API Error:', error.message);
-    if (error.response) {
-      console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    }
-    return Promise.reject(error);
+  if (error.hint) {
+    console.error('Hint:', error.hint);
   }
-);
+  return Promise.reject(error);
+};
 
 interface BookmarkResponse {
   bookmarked: boolean;
   message: string;
 }
 
+// Ensure image URLs are properly formatted
+const ensureFullImageUrl = (imageUrl: string | null | undefined): string => {
+  if (!imageUrl) return '/images/placeholder.svg';
+  
+  // If it's already a full URL or a local path starting with '/'
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('/')) {
+    return imageUrl;
+  }
+  
+  // Otherwise, assume it's a relative path and add the base URL
+  return `/images/${imageUrl}`;
+};
+
 const bookmarkService = {
   /**
    * Get all bookmarked cafes for the current user
    */
   getBookmarkedCafes: async (): Promise<Cafe[]> => {
-    // Make sure user is logged in
-    if (!authService.isLoggedIn()) {
-      console.log('User not logged in, returning empty bookmarks');
-      return [];
-    }
-    
     try {
-      console.log('Fetching bookmarked cafes with deep population...');
-      
-      // Get user with fully populated bookmarked cafes
-      const response = await api.get('/users/me?populate[bookmarkedCafes][populate]=*');
-      console.log('Bookmarked cafes response received');
-      
-      // Extract bookmarked cafes from response
-      let bookmarkedCafes = [];
-      
-      // Handle different possible response structures
-      if (response.data?.bookmarkedCafes) {
-        bookmarkedCafes = response.data.bookmarkedCafes;
-      } else if (response.data?.data?.attributes?.bookmarkedCafes?.data) {
-        bookmarkedCafes = response.data.data.attributes.bookmarkedCafes.data;
-      } else {
-        console.warn('No bookmarked cafes found in the response');
+      // Check if user is logged in
+      const session = await authService.getSession();
+      if (!session) {
+        console.log('User not logged in, returning empty bookmarks');
         return [];
       }
       
-      // Transform each cafe to our application format using the imported function
-      return bookmarkedCafes.map((cafe: Cafe) => transformCafeData(cafe));
+      console.log('Fetching bookmarked cafes...');
+      
+      // Get the user's bookmarks with joined cafe data
+      const { data: bookmarks, error } = await supabase
+        .from(BOOKMARKS_TABLE)
+        .select(`
+          cafe_id,
+          cafes (*)
+        `)
+        .eq('user_id', session.user.id);
+      
+      if (error) {
+        return handleSupabaseError(error, 'getBookmarkedCafes');
+      }
+      
+      if (!bookmarks || bookmarks.length === 0) {
+        console.log('No bookmarked cafes found');
+        return [];
+      }
+      
+      console.log('Found bookmarked cafes:', bookmarks.length);
+      
+      // Transform each cafe to our application format
+      return bookmarks.map(bookmark => {
+        // Type the cafe object properly to avoid TypeScript errors
+        const cafe: Record<string, any> = bookmark.cafes || {};
+        if (Object.keys(cafe).length === 0) return null;
+        
+        try {
+          // Format the cafe data to match our application's Cafe type
+          return {
+            id: Number(cafe.id) || 0,
+            Name: String(cafe.name || 'Unknown Cafe'),
+            title: String(cafe.name || 'Unknown Cafe'),
+            Description: [{ type: 'paragraph', children: [{ text: String(cafe.description || '') }] }],
+            description: String(cafe.description || ''),
+            image: ensureFullImageUrl(cafe.image),
+            Location: {
+              address: String(cafe.address || ''),
+              city: String(cafe.city || ''),
+              country: String(cafe.country || '')
+            },
+            hasWifi: Boolean(cafe.wifi),
+            hasPower: Boolean(cafe.power),
+            createdAt: String(cafe.created_at || new Date().toISOString()),
+            updatedAt: String(cafe.updated_at || new Date().toISOString())
+          } as Cafe;
+        } catch (err) {
+          console.error('Error transforming cafe data:', err);
+          return null;
+        }
+      }).filter(Boolean) as Cafe[];
     } catch (error: any) {
       console.error('Error fetching bookmarked cafes:', error);
-      console.error('Error details:', error.response?.data || error.message);
       return [];
     }
   },
@@ -91,33 +110,31 @@ const bookmarkService = {
    * Check if a cafe is bookmarked by the current user
    */
   isBookmarked: async (cafeId: number): Promise<boolean> => {
-    if (!authService.isLoggedIn()) {
-      return false;
-    }
-    
     try {
-      console.log(`Checking if cafe ${cafeId} is bookmarked...`);
-      // Get user with bookmarked cafes
-      const response = await api.get('/users/me?populate=bookmarkedCafes');
-      
-      // Extract bookmarked cafes from response
-      let bookmarkedCafes = [];
-      
-      // Handle different possible response structures
-      if (response.data?.bookmarkedCafes) {
-        bookmarkedCafes = response.data.bookmarkedCafes;
-      } else if (response.data?.data?.attributes?.bookmarkedCafes?.data) {
-        bookmarkedCafes = response.data.data.attributes.bookmarkedCafes.data;
-      } else {
+      // Check if user is logged in
+      const session = await authService.getSession();
+      if (!session) {
         return false;
       }
       
-      // Check if the cafe ID is in the list of bookmarked cafes
-      const isBookmarked = bookmarkedCafes.some((cafe: any) => cafe.id === cafeId);
-      console.log(`Cafe ${cafeId} is bookmarked: ${isBookmarked}`);
+      console.log(`Checking if cafe ${cafeId} is bookmarked...`);
+      
+      // Check if the bookmark exists
+      const { data, error, count } = await supabase
+        .from(BOOKMARKS_TABLE)
+        .select('*', { count: 'exact' })
+        .eq('user_id', session.user.id)
+        .eq('cafe_id', cafeId);
+      
+      if (error) {
+        return handleSupabaseError(error, 'isBookmarked');
+      }
+      
+      const isBookmarked = count ? count > 0 : (data && data.length > 0);
+      console.log(`Cafe ${cafeId} is ${isBookmarked ? '' : 'not '}bookmarked`);
       return isBookmarked;
-    } catch (error: any) {
-      console.error('Error checking bookmark status:', error);
+    } catch (error) {
+      console.error(`Error checking if cafe ${cafeId} is bookmarked:`, error);
       return false;
     }
   },
@@ -126,56 +143,68 @@ const bookmarkService = {
    * Toggle bookmark status for a cafe
    */
   toggleBookmark: async (cafeId: number): Promise<BookmarkResponse> => {
-    if (!authService.isLoggedIn()) {
-      return { bookmarked: false, message: 'You must be logged in to bookmark cafes' };
-    }
-
     try {
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser || !currentUser.id) {
-        return { bookmarked: false, message: 'User ID not found' };
+      // Check if user is logged in
+      const session = await authService.getSession();
+      if (!session) {
+        return {
+          bookmarked: false,
+          message: 'You must be logged in to bookmark cafes'
+        };
       }
-      const userId = currentUser.id;
       
-      // First, get the current user's bookmarked cafes
-      const currentBookmarks = await bookmarkService.getBookmarkedCafes();
-      const isCurrentlyBookmarked = currentBookmarks.some(cafe => cafe.id === cafeId);
+      // First check if the cafe is already bookmarked
+      const isCurrentlyBookmarked = await bookmarkService.isBookmarked(cafeId);
+      console.log(`Cafe ${cafeId} is currently ${isCurrentlyBookmarked ? '' : 'not '}bookmarked`);
       
-      // Determine the action based on current bookmark status
+      const userId = session.user.id;
+      
       if (isCurrentlyBookmarked) {
-        // Remove bookmark - use the Strapi API endpoint with proper format for Strapi v4
-        await api.patch(`/users/${userId}`, {
-          data: {
-            bookmarkedCafes: {
-              disconnect: [{ id: cafeId }]
-            }
-          }
-        });
-        console.log(`Removed cafe ${cafeId} from bookmarks`);
-        return { bookmarked: false, message: 'Cafe removed from bookmarks' };
-      } else {
-        // Find the cafe object in currentBookmarks to get the full reference
-        const cafe = currentBookmarks.find(c => c.id === cafeId);
-        if (!cafe) {
-          console.error('Cafe not found in current bookmarks:', cafeId);
-          return { bookmarked: false, message: 'Cafe not found' };
+        // Remove bookmark
+        console.log(`Removing bookmark for cafe ${cafeId}...`);
+        const { error } = await supabase
+          .from(BOOKMARKS_TABLE)
+          .delete()
+          .eq('user_id', userId)
+          .eq('cafe_id', cafeId);
+        
+        if (error) {
+          return handleSupabaseError(error, 'toggleBookmark-remove');
         }
         
-        // Add bookmark - use the Strapi API endpoint with proper format for Strapi v4
-        await api.patch(`/users/${userId}`, {
-          data: {
-            bookmarkedCafes: {
-              connect: [{ id: cafeId }]
-            }
-          }
-        });
-        console.log(`Added cafe ${cafeId} to bookmarks, current bookmarks:`, currentBookmarks);
-        return { bookmarked: true, message: 'Cafe added to bookmarks' };
+        return {
+          bookmarked: false,
+          message: 'Cafe removed from bookmarks'
+        };
+      } else {
+        // Add bookmark
+        console.log(`Adding bookmark for cafe ${cafeId}...`);
+        const { error } = await supabase
+          .from(BOOKMARKS_TABLE)
+          .insert({
+            user_id: userId,
+            cafe_id: cafeId,
+            created_at: new Date().toISOString()
+          });
+        
+        if (error) {
+          return handleSupabaseError(error, 'toggleBookmark-add');
+        }
+        
+        return {
+          bookmarked: true,
+          message: 'Cafe added to bookmarks'
+        };
       }
     } catch (error: any) {
-      console.error('Error toggling bookmark:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      return { bookmarked: false, message: 'Error updating bookmarks' };
+      console.error(`Error toggling bookmark for cafe ${cafeId}:`, error);
+      
+      // Return current state to avoid UI inconsistency
+      const currentState = await bookmarkService.isBookmarked(cafeId);
+      return {
+        bookmarked: currentState,
+        message: `Error: ${error.message || 'Unknown error'}`
+      };
     }
   }
 };

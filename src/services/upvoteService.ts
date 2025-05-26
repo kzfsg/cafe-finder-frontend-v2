@@ -1,46 +1,64 @@
-import axios from 'axios';
+import { supabase } from '../supabase-client';
+import authService from './authService';
 import type { Cafe } from '../data/cafes';
 
-// Base URL for Strapi API
-const API_URL = 'http://localhost:1337';
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+// Table names for Supabase
+const CAFES_TABLE = 'cafes';
+const USER_UPVOTES_TABLE = 'user_upvotes';
 
-// Add interceptor to include auth token in requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('jwt');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Add response interceptor for better error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.status, error.response?.data);
-    return Promise.reject(error);
+// Helper function to handle Supabase errors
+const handleSupabaseError = (error: any, context: string) => {
+  console.error(`Supabase error (${context}):`, error.message);
+  if (error.details) {
+    console.error('Details:', error.details);
   }
-);
+  if (error.hint) {
+    console.error('Hint:', error.hint);
+  }
+  return Promise.reject(error);
+};
 
 // Get the current user's upvoted cafes as full cafe objects
 const getUpvotedCafes = async (): Promise<Cafe[]> => {
   try {
-    const response = await api.get('/api/users/me?populate=upvotedCafes');
-    if (response.data && response.data.upvotedCafes && Array.isArray(response.data.upvotedCafes)) {
-      // Return the full cafe objects directly from the API response
-      console.log('Upvoted cafes response:', response.data.upvotedCafes);
-      return response.data.upvotedCafes;
+    // Check if user is logged in
+    const session = await authService.getSession();
+    if (!session) {
+      console.log('User not logged in, returning empty upvoted cafes');
+      return [];
     }
-    return [];
+    
+    // Get the user's upvoted cafe IDs from the user_upvotes table
+    const { data: upvotes, error } = await supabase
+      .from(USER_UPVOTES_TABLE)
+      .select('cafe_id')
+      .eq('user_id', session.user.id);
+    
+    if (error) {
+      return handleSupabaseError(error, 'getUpvotedCafes');
+    }
+    
+    if (!upvotes || upvotes.length === 0) {
+      console.log('No upvoted cafes found');
+      return [];
+    }
+    
+    // Extract the cafe IDs
+    const cafeIds = upvotes.map(upvote => upvote.cafe_id);
+    
+    // Get the cafe details for each upvoted cafe
+    const { data: cafes, error: cafesError } = await supabase
+      .from(CAFES_TABLE)
+      .select('*')
+      .in('id', cafeIds);
+    
+    if (cafesError) {
+      return handleSupabaseError(cafesError, 'getUpvotedCafes-cafes');
+    }
+    
+    // Transform the cafes to match our application's Cafe interface
+    // This would typically call a transformCafeData function from cafeService
+    return cafes || [];
   } catch (error) {
     console.error('Error fetching upvoted cafes:', error);
     return [];
@@ -48,118 +66,127 @@ const getUpvotedCafes = async (): Promise<Cafe[]> => {
 };
 
 // Check if a cafe is upvoted by the current user
-const isCafeUpvoted = async (cafeId: string): Promise<boolean> => { // cafeId has to be documentId
-  console.log('docID:', cafeId);
-  const upvotedCafes = await getUpvotedCafes();
-  return upvotedCafes.some(cafe => cafe.documentId === cafeId);
+const isCafeUpvoted = async (cafeId: number): Promise<boolean> => {
+  try {
+    // Check if user is logged in
+    const session = await authService.getSession();
+    if (!session) {
+      console.log('User not logged in, cafe cannot be upvoted');
+      return false;
+    }
+    
+    // Check if there's a record in the user_upvotes table
+    const { data, error } = await supabase
+      .from(USER_UPVOTES_TABLE)
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('cafe_id', cafeId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 is the error code for no rows returned
+      console.error('Error checking upvote status:', error);
+      return false;
+    }
+    
+    // If data exists, the cafe is upvoted
+    return !!data;
+  } catch (error) {
+    console.error('Error checking if cafe is upvoted:', error);
+    return false;
+  }
 };
 
-// Upvote or remove upvote from a cafe
-const upvoteCafe = async (cafeId: string): Promise<{ success: boolean; upvoted: boolean; upvotes: number; cafe: Cafe }> => {
+// Upvote a cafe
+const upvoteCafe = async (cafeId: number): Promise<{ success: boolean; upvoted: boolean; upvotes: number; cafe: Cafe }> => {
   try {
-    console.log('upvoteService.upvoteCafe called with cafeId:', cafeId);
-    if (!cafeId) {
-      console.error('Error: No cafeId provided to upvoteCafe');
-      throw new Error('No cafeId provided');
+    console.log('Upvoting cafe with ID:', cafeId);
+    
+    // Check if user is logged in
+    const session = await authService.getSession();
+    if (!session) {
+      console.log('User not logged in, cannot upvote');
+      return { success: false, upvoted: false, upvotes: 0, cafe: {} as Cafe };
     }
     
-    // Get initial user and cafe state
-    console.log('Making API requests to get user and cafe data');
-    const [userResponse, initialCafeResponse] = await Promise.all([
-      api.get('/api/users/me?populate=*'),
-      api.get(`/api/cafes/${cafeId}?populate=*`)
-    ]);
-    console.log('API responses received:', { user: userResponse.status, cafe: initialCafeResponse.status });
-    
-    // Extract user's documentId instead of numeric id
-    const userId = userResponse.data?.documentId;
-    if (!userId) {
-      console.error('User documentId not found in response:', userResponse.data);
-      throw new Error('User documentId not found');
+    // Check if the cafe is already upvoted
+    const isAlreadyUpvoted = await isCafeUpvoted(cafeId);
+    if (isAlreadyUpvoted) {
+      console.log('Cafe already upvoted');
+      return { success: true, upvoted: true, upvotes: 0, cafe: {} as Cafe }; // Already upvoted, so we consider this successful
     }
-    console.log('Using user documentId:', userId);
-    // Handle both array and direct object responses
-    console.log('Initial cafe response:', initialCafeResponse.data);
-    const cafeData = Array.isArray(initialCafeResponse.data?.data) 
-      ? initialCafeResponse.data.data[0] 
-      : initialCafeResponse.data?.data || initialCafeResponse.data;
+    
+    // Start a transaction to update both the cafe upvote count and add a user_upvote record
+    // First, get the current upvote count
+    const { data: cafeData, error: cafeError } = await supabase
+      .from(CAFES_TABLE)
+      .select('upvotes')
+      .eq('id', cafeId)
+      .single();
+    
+    if (cafeError) {
+      console.error('Error fetching cafe data:', cafeError);
+      return { success: false, upvoted: false, upvotes: 0, cafe: {} as Cafe };
+    }
     
     if (!cafeData) {
-      console.error('No cafe data found in response:', initialCafeResponse, cafeId);
-      throw new Error('Cafe data not found in response');
+      console.error('Cafe not found with ID:', cafeId);
+      return { success: false, upvoted: false, upvotes: 0, cafe: {} as Cafe };
     }
     
-    const currentUpvotes = cafeData.upvotes || 0;
+    // Increment the upvote count
+    const newUpvotes = (cafeData.upvotes || 0) + 1;
     
-    if (!cafeId) {
-      console.error('Document ID not found in cafe data:', cafeData);
-      throw new Error('Document ID not found for cafe');
+    // Update the cafe with the new upvote count
+    const { error: updateError } = await supabase
+      .from(CAFES_TABLE)
+      .update({ upvotes: newUpvotes })
+      .eq('id', cafeId);
+    
+    if (updateError) {
+      console.error('Error updating cafe upvotes:', updateError);
+      return { success: false, upvoted: false, upvotes: 0, cafe: {} as Cafe };
     }
     
-    console.log('Initial user data:', userResponse.data);
-    console.log('Initial cafe data:', cafeData);
+    // Add a record to the user_upvotes table
+    const { error: upvoteError } = await supabase
+      .from(USER_UPVOTES_TABLE)
+      .insert({
+        user_id: session.user.id,
+        cafe_id: cafeId,
+        created_at: new Date().toISOString()
+      });
     
-    // Toggle upvote
-    const currentlyUpvoted = await isCafeUpvoted(cafeId);
-    const newUpvotes = currentlyUpvoted ? Math.max(0, currentUpvotes - 1) : currentUpvotes + 1;
-    
-    // Update user's upvoted cafes
-    const userEndpoint = `/api/users/${userId}`;
-    const userData = {
-      data: {
-        upvotedCafes: currentlyUpvoted ? 
-          { disconnect: [cafeId] } : 
-          { connect: [cafeId] }
-      }
-    };
-    
-    // Update cafe's upvote count using documentId
-    console.log(`Updating cafe ${cafeId} with upvotes:`, newUpvotes);
-    await api.put(`/api/cafes/${cafeId}`, { 
-      data: {
-      upvotes: newUpvotes
+    if (upvoteError) {
+      console.error('Error inserting user upvote record:', upvoteError);
+      return { success: false, upvoted: false, upvotes: 0, cafe: {} as Cafe };
     }
-    });
     
-    // Update user's upvoted cafes
-    const toggleResponse = await api.put(userEndpoint, userData); // endpoint and add data inside
-    console.log('Upvote toggle response:', toggleResponse.status, toggleResponse.data);
-    
-    // Get updated cafe state
-    const updatedCafeResponse = await api.get(`/api/cafes/${cafeId}`);
-    console.log('Updated cafe data:', updatedCafeResponse.data);
-    
-    const updatedCafe = updatedCafeResponse.data;
-    const upvotes = updatedCafe?.upvotes || newUpvotes; // Use newUpvotes as fallback
-    
-    // Get the full updated cafe object
-    const updatedCafeObject = updatedCafe?.data || updatedCafe;
+    // Get the updated cafe data
+    const { data: updatedCafe, error: fetchError } = await supabase
+      .from(CAFES_TABLE)
+      .select('*')
+      .eq('id', cafeId)
+      .single();
+      
+    if (fetchError || !updatedCafe) {
+      console.error('Error fetching updated cafe data:', fetchError);
+      return { success: true, upvoted: true, upvotes: newUpvotes, cafe: {} as Cafe };
+    }
     
     return {
       success: true,
-      upvoted: !currentlyUpvoted,
-      upvotes: upvotes,
-      cafe: updatedCafeObject
+      upvoted: true,
+      upvotes: newUpvotes,
+      cafe: updatedCafe as Cafe
     };
-    
-  } catch (error: any) {
-    console.error('Error in upvoteCafe:', {
-      message: error?.message || 'Unknown error',
-      response: error?.response?.data,
-      status: error?.response?.status,
-      cafeId: cafeId
-    });
-    
-    // Log more details about the error
-    if (error.response) {
-      console.error('Error response:', error.response);
-    } else if (error.request) {
-      console.error('Error request:', error.request);
-    } else {
-      console.error('Error details:', error);
-    }
-    
-    throw error;
+  } catch (error) {
+    console.error('Error upvoting cafe:', error);
+    return {
+      success: false,
+      upvoted: false,
+      upvotes: 0,
+      cafe: {} as Cafe
+    };
   }
 };
 

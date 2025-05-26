@@ -14,12 +14,17 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only check bookmark status if user is logged in
-    if (authService.isLoggedIn()) {
-      checkBookmarkStatus();
-    } else {
-      setIsLoading(false);
-    }
+    // Check if user is logged in and then check bookmark status
+    const checkAuth = async () => {
+      const isLoggedIn = await authService.isLoggedIn();
+      if (isLoggedIn) {
+        checkBookmarkStatus();
+      } else {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
   }, [cafeId]);
 
   const checkBookmarkStatus = async () => {
@@ -37,7 +42,9 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
   const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering parent click events
     
-    if (!authService.isLoggedIn()) {
+    // Check if user is logged in
+    const isLoggedIn = await authService.isLoggedIn();
+    if (!isLoggedIn) {
       // Redirect to login if not logged in
       navigate('/login', { state: { from: window.location.pathname } });
       return;

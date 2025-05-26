@@ -4,19 +4,19 @@ import type { Cafe } from '../data/cafes';
 import '../styles/UpvoteButton.css';
 
 interface UpvoteButtonProps {
-  cafeId: string;
-  initialUpvotes?: number;
-  onUpvoteChange?: (id: string, newUpvotes: number, cafe: Cafe) => void;
+  cafeId: number;
+  upvotes?: number;
+  onUpvote?: (id: number, newUpvotes: number, cafe: Cafe) => void;
 }
 
 const UpvoteButton: React.FC<UpvoteButtonProps> = ({ 
   cafeId, 
-  initialUpvotes = 0, 
-  onUpvoteChange 
+  upvotes = 0, 
+  onUpvote 
 }) => {
   const [isUpvoted, setIsUpvoted] = useState(false);
   const [isUpvoting, setIsUpvoting] = useState(false);
-  const [upvotes, setUpvotes] = useState(initialUpvotes);
+  const [upvoteCount, setUpvoteCount] = useState(upvotes);
   
   // Check if cafe is upvoted on component mount
   useEffect(() => {
@@ -36,8 +36,8 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
   
   // Update local upvote count when prop changes
   useEffect(() => {
-    setUpvotes(initialUpvotes);
-  }, [initialUpvotes]);
+    setUpvoteCount(upvotes);
+  }, [upvotes]);
 
   const handleUpvote = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent element click
@@ -52,12 +52,14 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
       console.log('Calling upvoteService.upvoteCafe with cafeId:', cafeId);
       const result = await upvoteService.upvoteCafe(cafeId); // calls upvoteCafe
       console.log('Upvote result:', result);
-      if (result) {
-        setIsUpvoted(result.upvoted);
-        setUpvotes(result.upvotes);
-        if (onUpvoteChange) {
-          onUpvoteChange(cafeId, result.upvotes, result.cafe);
-        }
+      // Update local state
+      setIsUpvoted(true);
+      const newUpvotes = upvoteCount + 1;
+      setUpvoteCount(newUpvotes);
+      
+      // Call parent callback if provided
+      if (onUpvote) {
+        onUpvote(cafeId, newUpvotes, {} as Cafe);
       }
     } catch (error) {
       console.error('Error toggling upvote:', error);
@@ -79,7 +81,7 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
         alt={isUpvoted ? 'Upvoted' : 'Upvote'} 
         className={`upvote-icon ${isUpvoted ? 'active' : ''} ${isUpvoting ? 'loading' : ''}`} 
       />
-      <span className="upvotes-count">{upvotes}</span>
+      <span className="upvote-count">{upvoteCount}</span>
     </button>
   );
 };
