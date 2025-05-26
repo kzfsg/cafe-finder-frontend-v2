@@ -66,12 +66,18 @@ const upvoteCafe = async (cafeId: string): Promise<{ success: boolean; upvoted: 
     // Get initial user and cafe state
     console.log('Making API requests to get user and cafe data');
     const [userResponse, initialCafeResponse] = await Promise.all([
-      api.get('/api/users/me'),
+      api.get('/api/users/me?populate=*'),
       api.get(`/api/cafes/${cafeId}?populate=*`)
     ]);
     console.log('API responses received:', { user: userResponse.status, cafe: initialCafeResponse.status });
     
-    const userId = userResponse.data?.id;
+    // Extract user's documentId instead of numeric id
+    const userId = userResponse.data?.documentId;
+    if (!userId) {
+      console.error('User documentId not found in response:', userResponse.data);
+      throw new Error('User documentId not found');
+    }
+    console.log('Using user documentId:', userId);
     // Handle both array and direct object responses
     console.log('Initial cafe response:', initialCafeResponse.data);
     const cafeData = Array.isArray(initialCafeResponse.data?.data) 
@@ -97,17 +103,13 @@ const upvoteCafe = async (cafeId: string): Promise<{ success: boolean; upvoted: 
     const currentlyUpvoted = await isCafeUpvoted(cafeId);
     const newUpvotes = currentlyUpvoted ? Math.max(0, currentUpvotes - 1) : currentUpvotes + 1;
     
-    // Find the numeric ID from the documentId for user relation updates
-    // This is needed because Strapi relations still use numeric IDs internally
-    const numericId = cafeData.id;
-    
     // Update user's upvoted cafes
     const userEndpoint = `/api/users/${userId}`;
     const userData = {
       data: {
         upvotedCafes: currentlyUpvoted ? 
-          { disconnect: [numericId] } : 
-          { connect: [numericId] }
+          { disconnect: [cafeId] } : 
+          { connect: [cafeId] }
       }
     };
     
@@ -120,7 +122,7 @@ const upvoteCafe = async (cafeId: string): Promise<{ success: boolean; upvoted: 
     });
     
     // Update user's upvoted cafes
-    const toggleResponse = await api.put(userEndpoint, userData);
+    const toggleResponse = await api.put(userEndpoint, userData); // endpoint and add data inside
     console.log('Upvote toggle response:', toggleResponse.status, toggleResponse.data);
     
     // Get updated cafe state
