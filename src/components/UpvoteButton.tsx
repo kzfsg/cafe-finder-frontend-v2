@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import upvoteService from '../services/upvoteService';
 import type { Cafe } from '../data/cafes';
+import '../styles/UpvoteButton.css';
 
 interface UpvoteButtonProps {
   cafeId: string;
@@ -75,7 +76,7 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
     >
       <img 
         src="/icons/upvote.svg" 
-        alt="Upvote" 
+        alt={isUpvoted ? 'Upvoted' : 'Upvote'} 
         className={`upvote-icon ${isUpvoted ? 'active' : ''} ${isUpvoting ? 'loading' : ''}`} 
       />
       <span className="upvotes-count">{upvotes}</span>
