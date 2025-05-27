@@ -33,6 +33,7 @@ export interface Cafe {
   downvotes: number;
   
   // Legacy fields for backward compatibility
+  imageUrls: string[]; // Array of image URLs for the cafe
   documentId?: string;
   Name?: string;  // For compatibility with existing code
   title?: string;  // For compatibility with existing code
@@ -69,6 +70,7 @@ export const cafes: Cafe[] = [
     id: 1,
     created_at: "2025-05-26 08:46:17.754614+00",
     name: "Puku Cafe",
+    imageUrls: [], // Add empty array as default for sample data
     description: "Puku Cafe and Sports Bar in Hanoi, Vietnam, is a popular 24/7 venue located in the heart of the Old Quarter on Hanoi's Food Street. It offers a cozy and lively atmosphere suitable for a variety of occasions, including casual hangouts, working, watching sports, and group events.",
     location: {
       city: "Hanoi", 
@@ -113,6 +115,7 @@ export const cafes: Cafe[] = [
     id: 2,
     created_at: "2025-05-26 08:47:24.293189+00",
     name: "The Note Coffee",
+    imageUrls: [], // Add empty array as default for sample data
     description: "The Note Coffee is a charming, cozy cafe located near Hoan Kiem Lake, famous for its unique décor filled with colorful sticky notes left by visitors from around the world. It offers a warm and inviting atmosphere, perfect for working or relaxing. The cafe serves a variety of coffee drinks, teas, and light snacks. It has a quiet ambiance during weekdays, making it suitable for focused work or casual meetings.",
     location: {
       city: "Hanoi", 
@@ -150,6 +153,7 @@ export const cafes: Cafe[] = [
     id: 3,
     created_at: "2025-05-26 08:48:05.623917+00",
     name: "Blackbird Coffee",
+    imageUrls: [], // Add empty array as default for sample data
     description: "Blackbird Coffee is a specialty coffee shop in Hanoi dedicated to Vietnamese coffee and coffee enthusiasts. It features a cozy, quiet ambiance with a blend of classic and modern design elements highlighted by its signature orange color scheme. The café offers a variety of brewing methods including espresso, pour-over, and traditional Vietnamese drip coffee. It is praised for excellent coffee quality, including egg coffee, and a selection of sweets and light meals. The space includes two floors with distinct atmospheres and a balcony with a street view, making it suitable for work, casual meetings, or relaxing. The staff is friendly and attentive, and the café is popular among locals and travelers alike.",
     location: {
       city: "Hanoi", 
@@ -187,6 +191,7 @@ export const cafes: Cafe[] = [
     id: 4,
     created_at: "2025-05-26 08:48:45.513252+00",
     name: "Ciara Terrace",
+    imageUrls: [], // Add empty array as default for sample data
     description: "Located in Cầu Giấy District, Ciara Terrace Cafe is a coffee shop and coworking space in one. It offers a generous menu including hot and iced coffee, cold brew tea, fruit smoothies, and seasonal food specials. The café provides remote workers with office supplies like staplers, notepads, and power sockets everywhere, making it highly convenient for work.",
     location: {
       city: "Hanoi", 
@@ -224,6 +229,7 @@ export const cafes: Cafe[] = [
     id: 5,
     created_at: "2025-05-26 08:51:54.282531+00",
     name: "HOON Cafe",
+    imageUrls: [],
     description: "HOON Cafe is a tranquil coffee spot in Ba Dinh district with a small but peaceful space. It features simple wooden furniture, a small garden area, and a balcony with airy views. The café offers a focused atmosphere with strong coffee aroma, ideal for peaceful work or study sessions.",
     location: {
       city: "Hanoi", 

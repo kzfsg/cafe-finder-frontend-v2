@@ -72,23 +72,26 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
         <h2>Gallery</h2>
         <div className="gallery-main">
           <img 
-            src={cafe.gallery && cafe.gallery.length > 0 ? cafe.gallery[activeImageIndex] : (cafe.image || '/images/no-image.svg')} 
-            alt={`${cafe.title} - Photo ${activeImageIndex + 1}`} 
+            src={cafe.imageUrls && cafe.imageUrls.length > 0 ? cafe.imageUrls[activeImageIndex] : (cafe.image || '/images/no-image.svg')} 
+            alt={`${cafe.title || cafe.name || 'Cafe'} - Photo ${activeImageIndex + 1}`} 
             className="gallery-main-image" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/images/no-image.svg';
+            }}
           />
           
-          {cafe.gallery && cafe.gallery.length > 1 && (
+          {cafe.imageUrls && cafe.imageUrls.length > 1 && (
             <div className="gallery-navigation">
               <button 
                 className="gallery-nav-button"
-                onClick={() => setActiveImageIndex(prev => (prev === 0 ? (cafe.gallery?.length || 1) - 1 : prev - 1))}
+                onClick={() => setActiveImageIndex(prev => (prev === 0 ? (cafe.imageUrls?.length || 1) - 1 : prev - 1))}
                 aria-label="Previous photo"
               >
                 &#10094;
               </button>
               <button 
                 className="gallery-nav-button"
-                onClick={() => setActiveImageIndex(prev => (prev === (cafe.gallery?.length || 1) - 1 ? 0 : prev + 1))}
+                onClick={() => setActiveImageIndex(prev => (prev === (cafe.imageUrls?.length || 1) - 1 ? 0 : prev + 1))}
                 aria-label="Next photo"
               >
                 &#10095;
@@ -97,16 +100,19 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
           )}
         </div>
         <div className="gallery-thumbnails">
-          {cafe.gallery && cafe.gallery.length > 0 ? cafe.gallery.map((image, index) => (
+          {cafe.imageUrls && cafe.imageUrls.length > 0 ? cafe.imageUrls.map((image, index) => (
             <img 
               key={index}
               src={image} 
-              alt={`Thumbnail ${index + 1}`}
+              alt={`${cafe.title || cafe.name || 'Cafe'} - Thumbnail ${index + 1}`}
               className={`gallery-thumbnail ${index === activeImageIndex ? 'active' : ''}`}
               onClick={() => setActiveImageIndex(index)}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/no-image.svg';
+              }}
             />
           )) : (
-            <img src={cafe.image} alt={cafe.title} className="gallery-thumbnail active" />
+            <div className="no-images">No images available</div>
           )}
         </div>
       </section>

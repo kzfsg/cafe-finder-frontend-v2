@@ -18,18 +18,20 @@ interface LoginData {
 type User = {
   id: string;
   email: string;
-  username?: string;
+  username: string;
   avatar_url?: string;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
   bookmarkedCafes?: any[];
   [key: string]: any; // For other properties that might be returned
 };
 
 // Interface for auth state change callback
+// events: 'SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'TOKEN_REFRESHED', 'USER_DELETED' (from Supabase)
+// session: The current session object (data) or null
 type AuthChangeCallback = (event: string, session: Session | null) => void;
 
-// This ensures we're exporting the type
+// export the events and sessions so they can be used in other files
 export type { User, AuthChangeCallback };
 
 // Convert Supabase user to our User type
@@ -46,7 +48,7 @@ const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | nul
   return {
     id: supabaseUser.id,
     email: supabaseUser.email,
-    username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0],
+    username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0], // for future social logins
     created_at: supabaseUser.created_at || new Date().toISOString(),
     updated_at: profile?.updated_at || supabaseUser.updated_at,
     avatar_url: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url,
@@ -64,7 +66,6 @@ const authService = {
         options: {
           data: {
             username: data.username,
-            email: data.email
           }
         }
       });
