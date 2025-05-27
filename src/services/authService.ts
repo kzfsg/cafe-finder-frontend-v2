@@ -1,6 +1,9 @@
 import { supabase } from '../supabase-client';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
+// Cache for user profiles
+const profileCache = new Map<string, User>();
+
 // Interface for user registration data
 interface RegisterData {
   username: string;
@@ -38,6 +41,12 @@ export type { User, AuthChangeCallback };
 const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
   if (!supabaseUser || !supabaseUser.email) return null;
   
+  // Return cached profile if available
+  const cachedProfile = profileCache.get(supabaseUser.id);
+  if (cachedProfile) {
+    return cachedProfile;
+  }
+
   try {
     // Get profile data from profiles table with timeout protection
     const profilePromise = supabase
@@ -47,8 +56,9 @@ const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | nul
       .single();
     
     // Add a timeout to prevent hanging
+    let timeoutId: NodeJS.Timeout;
     const timeoutPromise = new Promise<{data: null}>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         console.warn('Profile fetch timed out, using fallback data');
         reject(new Error('Profile fetch timeout'));
       }, 5000);
@@ -58,16 +68,24 @@ const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | nul
     const { data: profile } = await Promise.race([
       profilePromise,
       timeoutPromise
-    ]).catch(() => ({ data: null })); // Fallback to null if either promise rejects
-    
-    return {
+    ]).catch((error) => {
+      clearTimeout(timeoutId);
+      console.warn('Profile fetch error:', error);
+      return { data: null };
+    });
+
+    const userData = {
       id: supabaseUser.id,
       email: supabaseUser.email,
-      username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0], // for future social logins
+      username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0],
       created_at: supabaseUser.created_at || new Date().toISOString(),
       updated_at: profile?.updated_at || supabaseUser.updated_at || new Date().toISOString(),
       avatar_url: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url || '',
     };
+
+    // Cache the profile data
+    profileCache.set(supabaseUser.id, userData);
+    return userData;
   } catch (error) {
     console.error('Error formatting user:', error);
     // Return basic user info without profile data

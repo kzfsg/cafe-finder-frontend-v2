@@ -35,24 +35,8 @@ const bookmarkService = {
    */
   getBookmarkedCafes: async (): Promise<Cafe[]> => {
     try {
-      console.log('Getting bookmarked cafes for current user');
       const session = await authService.getSession();
       if (!session) {
-        console.log('No session found, user not logged in');
-        return [];
-      }
-      
-      console.log(`Fetching bookmarks for user ${session.user.id}`);
-      
-      // First check if the bookmarks table exists by querying it
-      const { data: tableCheck, error: tableError } = await supabase
-        .from(BOOKMARKS_TABLE)
-        .select('id')
-        .limit(1);
-        
-      if (tableError) {
-        console.error('Error accessing bookmarks table:', tableError);
-        console.log('This may indicate the bookmarks table does not exist or has incorrect permissions');
         return [];
       }
       
@@ -61,13 +45,12 @@ const bookmarkService = {
         .from(BOOKMARKS_TABLE)
         .select(`
           cafe_id,
-          cafes:cafe_id (*)
+          cafes (*)
         `)
         .eq('user_id', session.user.id);
       
       if (error) {
-        console.error('Error fetching bookmarked cafes:', error);
-        return [];
+        return handleSupabaseError(error, 'getBookmarkedCafes');
       }
       
       if (!bookmarks || bookmarks.length === 0) {
@@ -75,90 +58,40 @@ const bookmarkService = {
         return [];
       }
       
-      console.log(`Found ${bookmarks.length} bookmarked cafes`);
+      console.log('Found bookmarked cafes:', bookmarks.length);
       
       // Transform each cafe to our application format
-      const cafes = bookmarks
-        .filter(bookmark => bookmark.cafes)
-        .map(bookmark => {
-          // Type the cafe object properly to avoid TypeScript errors
-          const cafe: Record<string, any> = bookmark.cafes || {};
-          if (!cafe || Object.keys(cafe).length === 0) {
-            console.log(`Skipping bookmark with cafe_id ${bookmark.cafe_id} - no cafe data found`);
-            return null;
-          }
-          
-          console.log(`Processing bookmarked cafe: ${cafe.name || 'Unknown'} (ID: ${cafe.id || 'Unknown'})`);
-
+      return bookmarks.map(bookmark => {
+        // Type the cafe object properly to avoid TypeScript errors
+        const cafe: Record<string, any> = bookmark.cafes || {};
+        if (Object.keys(cafe).length === 0) return null;
         
         try {
           // Format the cafe data to match our application's Cafe type
-          // Ensure all required fields have fallback values to prevent errors
-          const transformedCafe: Cafe = {
-            id: Number(cafe.id) || 0,
-            created_at: cafe.created_at || new Date().toISOString(),
-            name: String(cafe.name || 'Unknown Cafe'),
-            description: String(cafe.description || 'No description available'),
-            location: {
-              city: String(cafe.location?.city || cafe.city || 'Unknown'),
-              address: String(cafe.location?.address || cafe.address || 'Unknown'),
-              country: String(cafe.location?.country || cafe.country || 'Unknown'),
-              latitude: Number(cafe.location?.latitude || cafe.latitude || 0),
-              longitude: Number(cafe.location?.longitude || cafe.longitude || 0)
-            },
-            wifi: Boolean(cafe.wifi),
-            powerOutletAvailable: Boolean(cafe.power_outlet_available || cafe.powerOutletAvailable),
-            upvotes: Number(cafe.upvotes || 0),
-            downvotes: Number(cafe.downvotes || 0),
-            imageUrls: Array.isArray(cafe.imageUrls) && cafe.imageUrls.length > 0 
-              ? cafe.imageUrls.map((url) => ensureFullImageUrl(url))
-              : cafe.image 
-                ? [ensureFullImageUrl(cafe.image)] 
-                : ['/images/no-image.svg'],
-            // Add backward compatibility fields
-            Name: String(cafe.name || 'Unknown Cafe'),
-            title: String(cafe.name || 'Unknown Cafe'),
-            image: cafe.image ? ensureFullImageUrl(cafe.image) : '/images/no-image.svg',
-            Description: [{ type: 'paragraph', children: [{ text: String(cafe.description || '') }] }],
-            hasWifi: Boolean(cafe.wifi),
-            hasPower: Boolean(cafe.power_outlet_available || cafe.powerOutletAvailable),
-            Location: {
-              city: String(cafe.location?.city || cafe.city || 'Unknown'),
-              address: String(cafe.location?.address || cafe.address || 'Unknown'),
-              country: String(cafe.location?.country || cafe.country || 'Unknown'),
-              latitude: Number(cafe.location?.latitude || cafe.latitude || 0),
-              longitude: Number(cafe.location?.longitude || cafe.longitude || 0)
-            }
-          };
-          
-          return transformedCafe;
-        } catch (error) {
-          console.error(`Error transforming cafe data for ID ${cafe.id}:`, error);
-          // Return a minimal valid cafe object with required fields
           return {
             id: Number(cafe.id) || 0,
-            created_at: new Date().toISOString(),
-            name: 'Error Loading Cafe',
-            description: 'There was an error loading this cafe\'s details',
-            location: { city: 'Unknown', address: 'Unknown', country: 'Unknown', latitude: 0, longitude: 0 },
-            wifi: false,
-            powerOutletAvailable: false,
-            upvotes: 0,
-            downvotes: 0,
-            imageUrls: ['/images/no-image.svg'],
-            // Add backward compatibility fields
-            Name: 'Error Loading Cafe',
-            title: 'Error Loading Cafe',
-            image: '/images/no-image.svg',
-            Description: [{ type: 'paragraph', children: [{ text: 'There was an error loading this cafe\'s details' }] }],
-            hasWifi: false,
-            hasPower: false,
-            Location: { city: 'Unknown', address: 'Unknown', country: 'Unknown', latitude: 0, longitude: 0 }
-          };
+            Name: String(cafe.name || 'Unknown Cafe'),
+            title: String(cafe.name || 'Unknown Cafe'),
+            Description: [{ type: 'paragraph', children: [{ text: String(cafe.description || '') }] }],
+            description: String(cafe.description || ''),
+            image: ensureFullImageUrl(cafe.image),
+            Location: {
+              address: String(cafe.address || ''),
+              city: String(cafe.city || ''),
+              country: String(cafe.country || '')
+            },
+            hasWifi: Boolean(cafe.wifi),
+            hasPower: Boolean(cafe.power),
+            createdAt: String(cafe.created_at || new Date().toISOString()),
+            updatedAt: String(cafe.updated_at || new Date().toISOString())
+          } as Cafe;
+        } catch (err) {
+          console.error('Error transforming cafe data:', err);
+          return null;
         }
       }).filter(Boolean) as Cafe[];
-    } catch (error) {
-      console.error('Error in getBookmarkedCafes:', error);
+    } catch (error: any) {
+      console.error('Error fetching bookmarked cafes:', error);
       return [];
     }
   },
@@ -223,6 +156,18 @@ const bookmarkService = {
       if (isNaN(numericCafeId)) {
         console.error('Invalid cafeId:', cafeId);
         return { bookmarked: false, message: 'Invalid cafe ID' };
+      }
+      
+      // Check if user profile exists in profiles table
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (profileError || !userProfile) {
+        console.error('User profile not found:', session.user.id, profileError);
+        return { bookmarked: false, message: 'User profile not found. Please complete your profile first.' };
       }
       
       console.log(`Checking if cafe ${numericCafeId} is already bookmarked by user ${session.user.id}`);

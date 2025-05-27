@@ -31,7 +31,7 @@ const getUpvotedCafes = async (): Promise<Cafe[]> => {
     // Extract cafe IDs from upvote records
     const cafeIds = upvotes.map(upvote => upvote.cafe_id);
     
-    // Fetch the full cafe data for each upvoted cafe
+    // Fetch the full cafe data for each upvoted cafe 
     const { data: cafes, error: cafesError } = await supabase
       .from(CAFES_TABLE)
       .select('*')
@@ -84,6 +84,7 @@ const toggleUpvote = async (cafeId: number): Promise<{
   upvoted: boolean;
   upvotes: number;
   cafe: Cafe | null;
+  message?: string;
 }> => {
   try {
     console.log('toggleUpvote called for cafeId:', cafeId);
@@ -128,17 +129,34 @@ const toggleUpvote = async (cafeId: number): Promise<{
       // Calculate new upvote count (ensure it doesn't go below 0)
       const newUpvotes = Math.max(0, (currentCafe?.upvotes || 0) - 1);
       
-      // Update the cafe with the new upvote count
-      const { data: updatedCafe, error: updateError } = await supabase
+      // First perform the update
+      const { error: updateError } = await supabase
         .from(CAFES_TABLE)
         .update({ upvotes: newUpvotes })
-        .eq('id', cafeId)
-        .select('*')
-        .single();
+        .eq('id', cafeId);
       
       if (updateError) {
         console.error('Error updating cafe upvotes:', updateError);
-        return { success: false, upvoted: false, upvotes: 0, cafe: null };
+        return { success: false, upvoted: true, upvotes: newUpvotes + 1, cafe: null };
+      }
+      
+      // Then fetch the updated cafe data in a separate query
+      const { data: updatedCafe, error: fetchError } = await supabase
+        .from(CAFES_TABLE)
+        .select('*')
+        .eq('id', cafeId)
+        .single();
+      
+      if (fetchError || !updatedCafe) {
+        console.error('Error fetching updated cafe after removing upvote:', fetchError);
+        // Return success with the new upvote count even if fetch fails
+        return {
+          success: true,
+          upvoted: false,
+          upvotes: newUpvotes,
+          cafe: null,
+          message: 'Upvote removed but could not fetch updated cafe details'
+        };
       }
       
       // Skip full transformation to avoid potential issues
@@ -161,6 +179,24 @@ const toggleUpvote = async (cafeId: number): Promise<{
     } else {
       // ADD UPVOTE
       
+      // 0. First check if user exists in the profiles table
+      const { data: userProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      if (profileCheckError || !userProfile) {
+        console.error('User profile not found:', userId, profileCheckError);
+        return { 
+          success: false, 
+          upvoted: false, 
+          upvotes: 0, 
+          cafe: null,
+          message: 'User profile not found. Please complete your profile first.'
+        };
+      }
+      
       // 1. Insert a new upvote record
       const { error: insertError } = await supabase
         .from(USER_UPVOTES_TABLE)
@@ -172,7 +208,13 @@ const toggleUpvote = async (cafeId: number): Promise<{
       
       if (insertError) {
         console.error('Error adding upvote:', insertError);
-        return { success: false, upvoted: false, upvotes: 0, cafe: null };
+        return { 
+          success: false, 
+          upvoted: false, 
+          upvotes: 0, 
+          cafe: null,
+          message: 'Failed to add upvote. Please try again.'
+        };
       }
       
       // First get the current upvote count
@@ -185,21 +227,35 @@ const toggleUpvote = async (cafeId: number): Promise<{
       // Calculate new upvote count
       const newUpvotes = (currentCafe?.upvotes || 0) + 1;
       
-      // Update the cafe with the new upvote count
-      const { data: updatedCafe, error: updateError } = await supabase
+      // First perform the update
+      const { error: updateError } = await supabase
         .from(CAFES_TABLE)
         .update({ upvotes: newUpvotes })
-        .eq('id', cafeId)
-        .select('*')
-        .single();
+        .eq('id', cafeId);
       
       if (updateError) {
         console.error('Error updating cafe upvotes:', updateError);
-        return { success: false, upvoted: true, upvotes: 0, cafe: null };
+        return { success: false, upvoted: true, upvotes: newUpvotes - 1, cafe: null };
       }
       
-      // Skip full transformation to avoid potential issues
-      console.log('Returning updated cafe data without full transformation');
+      // Then fetch the updated cafe data in a separate query
+      const { data: updatedCafe, error: fetchError } = await supabase
+        .from(CAFES_TABLE)
+        .select('*')
+        .eq('id', cafeId)
+        .single();
+      
+      if (fetchError || !updatedCafe) {
+        console.error('Error fetching updated cafe:', fetchError);
+        // Return success with the new upvote count even if fetch fails
+        return {
+          success: true,
+          upvoted: true,
+          upvotes: newUpvotes,
+          cafe: null,
+          message: 'Upvote successful but could not fetch updated cafe details'
+        };
+      }
       return {
         success: true,
         upvoted: true,
