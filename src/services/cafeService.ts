@@ -280,8 +280,6 @@ const cafeService = {
         timeoutPromise
       ]);
       
-      console.log('test2 - Query completed or timed out');
-      
       if (error) {
         console.error('Error fetching cafes:', error);
         return handleSupabaseError(error, 'getAllCafes');
@@ -293,17 +291,43 @@ const cafeService = {
       }
       
       // Transform each cafe to our application format with individual timeouts
-      const transformPromises = cafesData.map(cafe => {
-        // Wrap each transform in a timeout
-        const transformWithTimeout = Promise.race([
-          transformCafeData(cafe),
-          new Promise<Cafe>((resolve) => {
-            setTimeout(() => {
-              console.warn(`Transform for cafe ${cafe.id} timed out, using fallback`);
+      const transformPromises: Promise<Cafe>[] = cafesData.map(cafe => {
+        console.log(`Starting transform for cafe ${cafe.id}`);
+        const startTime = Date.now();
+        
+        return new Promise<Cafe>((resolve) => {
+          // Create a timeout reference
+          const timeoutId = setTimeout(() => {
+            const duration = Date.now() - startTime;
+            console.warn(`Transform for cafe ${cafe.id} timed out after ${duration}ms`);
+            resolve({
+              id: cafe.id || 0,
+              name: cafe.name || 'Loading...',
+              description: 'Loading cafe data...',
+              location: { city: '', address: '', country: '' },
+              wifi: false,
+              powerOutletAvailable: false,
+              upvotes: 0,
+              downvotes: 0,
+              imageUrls: ['/images/placeholder.svg'],
+              created_at: new Date().toISOString()
+            });
+          }, 10000); // 10 second timeout
+
+          // Start the transformation
+          transformCafeData(cafe)
+            .then(result => {
+              clearTimeout(timeoutId);
+              console.log(`Transform completed for cafe ${cafe.id} in ${Date.now() - startTime}ms`);
+              resolve(result);
+            })
+            .catch(error => {
+              console.error(`Error transforming cafe ${cafe.id}:`, error);
+              clearTimeout(timeoutId);
               resolve({
                 id: cafe.id || 0,
-                name: cafe.name || 'Timeout Error',
-                description: 'This cafe data took too long to load',
+                name: cafe.name || 'Error Loading',
+                description: 'Failed to load cafe data',
                 location: { city: '', address: '', country: '' },
                 wifi: false,
                 powerOutletAvailable: false,
@@ -312,11 +336,8 @@ const cafeService = {
                 imageUrls: ['/images/placeholder.svg'],
                 created_at: new Date().toISOString()
               });
-            }, 5000); // 5 second timeout for each transform
-          })
-        ]);
-        
-        return transformWithTimeout;
+            });
+        });
       });
       
       const cafes = await Promise.all(transformPromises);
