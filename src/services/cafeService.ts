@@ -159,7 +159,13 @@ const ensureFullImageUrl = (imageUrl: string | null | undefined): string => {
  */
 const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
   try {
-    console.log(`Fetching images for cafe ID ${cafeId}`);
+    // Special debug for problematic cafes
+    const isProblematicCafe = [1, 2, 5].includes(cafeId);
+    if (isProblematicCafe) {
+      console.log(`🔍 DEBUGGING: Fetching images for problematic cafe ID ${cafeId}`);
+    } else {
+      console.log(`Fetching images for cafe ID ${cafeId}`);
+    }
     
     // First, check if the bucket exists
     console.log('Checking if the cafe-images bucket exists...');
@@ -168,7 +174,7 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
     
     if (bucketsError) {
       console.error('Error listing storage buckets:', bucketsError);
-      return [];
+      return ['/images/no-image.svg'];
     }
     
     // Check if our bucket exists
@@ -176,43 +182,86 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
     if (!cafeBucket) {
       console.warn('The cafe-images bucket does not exist in Supabase storage');
       
-      // For testing, let's create a temporary image URL array
-      // In production, you would want to create the bucket via the Supabase dashboard
-      return [`https://picsum.photos/seed/${cafeId}/400/300`];
+      // Use a local fallback image instead of an external placeholder
+      // This is more reliable and prevents network errors
+      return ['/images/no-image.svg'];
     }
     
     // List all files in the cafe's folder
+    const folderPath = `cafe-${cafeId}`;
+    
+    if (isProblematicCafe) {
+      console.log(`🔍 DEBUGGING: Listing files in folder ${folderPath} for cafe ${cafeId}`);
+    }
+    
     const { data: files, error } = await supabase.storage
       .from('cafe-images')
-      .list(`cafe-${cafeId}`);
+      .list(folderPath);
     
     if (error) {
-      console.error(`Error listing images for cafe ${cafeId}:`, error);
-      return [];
+      console.error(`❌ Error listing images for cafe ${cafeId}:`, error);
+      // Return a local fallback image instead of an empty array
+      return ['/images/no-image.svg'];
     }
     
-    console.log(`Found ${files?.length || 0} images for cafe ${cafeId}:`, files);
-    
-    if (!files || files.length === 0) {
-      console.log(`No images found for cafe ${cafeId}, using placeholder`);
-      // Use a placeholder image for testing
-      return [`https://picsum.photos/seed/${cafeId}/400/300`];
+    if (isProblematicCafe) {
+      console.log(`🔍 DEBUGGING: Found ${files?.length || 0} files for cafe ${cafeId}:`);
+      console.log(files);
+    } else {
+      console.log(`Found ${files?.length || 0} images for cafe ${cafeId}:`, files);
     }
     
-    // Get public URLs for all images
-    const imageUrls = files.map(file => {
+    // Filter out non-image files and the .emptyFolderPlaceholder
+    const imageFiles = files?.filter(file => {
+      // Check if it's not the .emptyFolderPlaceholder and has an image extension
+      const isNotPlaceholder = file.name !== '.emptyFolderPlaceholder';
+      const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
+      return isNotPlaceholder && hasImageExtension;
+    }) || [];
+    
+    if (isProblematicCafe) {
+      console.log(`🔍 DEBUGGING: After filtering, found ${imageFiles.length} valid image files:`, imageFiles);
+    }
+    
+    if (!imageFiles || imageFiles.length === 0) {
+      console.log(`No valid images found for cafe ${cafeId}, using fallback image`);
+      // Use a local fallback image for consistency and reliability
+      return ['/images/no-image.svg'];
+    }
+    
+    // Get public URLs for all valid image files
+    const imageUrls = imageFiles.map(file => {
+      const fullPath = `${folderPath}/${file.name}`;
+      if (isProblematicCafe) {
+        console.log(`🔍 DEBUGGING: Generating URL for file path: ${fullPath}`);
+      }
+      
       const { data: { publicUrl } } = supabase.storage
         .from('cafe-images')
-        .getPublicUrl(`cafe-${cafeId}/${file.name}`);
-      console.log(`Generated public URL for ${file.name}:`, publicUrl);
+        .getPublicUrl(fullPath);
+      
+      if (isProblematicCafe) {
+        console.log(`🔍 DEBUGGING: Generated URL: ${publicUrl}`);
+        // Check if the URL is valid by trying to fetch it
+        fetch(publicUrl, { method: 'HEAD' })
+          .then(response => {
+            console.log(`🔍 DEBUGGING: URL ${publicUrl} is ${response.ok ? 'valid' : 'invalid'} (${response.status})`);
+          })
+          .catch(err => {
+            console.error(`🔍 DEBUGGING: Error checking URL ${publicUrl}:`, err);
+          });
+      } else {
+        console.log(`Generated public URL for ${file.name}:`, publicUrl);
+      }
+      
       return publicUrl;
     });
     
     return imageUrls;
   } catch (error) {
     console.error('Error in getCafeImageUrls:', error);
-    // Return a placeholder image for testing
-    return [`https://picsum.photos/seed/${cafeId}/400/300`];
+    // Return a local fallback image instead of an external placeholder
+    return ['/images/no-image.svg'];
   }
 };
 
