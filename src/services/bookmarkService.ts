@@ -7,13 +7,7 @@ const BOOKMARKS_TABLE = 'bookmarks';
 
 // Helper function to handle Supabase errors
 const handleSupabaseError = (error: any, context: string) => {
-  console.error(`Supabase error (${context}):`, error.message);
-  if (error.details) {
-    console.error('Details:', error.details);
-  }
-  if (error.hint) {
-    console.error('Hint:', error.hint);
-  }
+  console.error(`Error (${context}):`, error.message);
   return Promise.reject(error);
 };
 
@@ -41,14 +35,10 @@ const bookmarkService = {
    */
   getBookmarkedCafes: async (): Promise<Cafe[]> => {
     try {
-      // Check if user is logged in
       const session = await authService.getSession();
       if (!session) {
-        console.log('User not logged in, returning empty bookmarks');
         return [];
       }
-      
-      console.log('Fetching bookmarked cafes...');
       
       // Get the user's bookmarks with joined cafe data
       const { data: bookmarks, error } = await supabase
@@ -111,30 +101,21 @@ const bookmarkService = {
    */
   isBookmarked: async (cafeId: number): Promise<boolean> => {
     try {
-      // Check if user is logged in
       const session = await authService.getSession();
-      if (!session) {
-        return false;
-      }
+      if (!session) return false;
       
-      console.log(`Checking if cafe ${cafeId} is bookmarked...`);
-      
-      // Check if the bookmark exists
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from(BOOKMARKS_TABLE)
-        .select('*', { count: 'exact' })
+        .select('*')
         .eq('user_id', session.user.id)
-        .eq('cafe_id', cafeId);
+        .eq('cafe_id', cafeId)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') return false;
       
-      if (error) {
-        return handleSupabaseError(error, 'isBookmarked');
-      }
-      
-      const isBookmarked = count ? count > 0 : (data && data.length > 0);
-      console.log(`Cafe ${cafeId} is ${isBookmarked ? '' : 'not '}bookmarked`);
-      return isBookmarked;
+      return !!data;
     } catch (error) {
-      console.error(`Error checking if cafe ${cafeId} is bookmarked:`, error);
+      console.error('Error in isBookmarked:', error);
       return false;
     }
   },
@@ -144,57 +125,52 @@ const bookmarkService = {
    */
   toggleBookmark: async (cafeId: number): Promise<BookmarkResponse> => {
     try {
-      // Check if user is logged in
       const session = await authService.getSession();
       if (!session) {
-        return {
-          bookmarked: false,
-          message: 'You must be logged in to bookmark cafes'
-        };
+        return { bookmarked: false, message: 'User not authenticated' };
       }
       
-      // First check if the cafe is already bookmarked
-      const isCurrentlyBookmarked = await bookmarkService.isBookmarked(cafeId);
-      console.log(`Cafe ${cafeId} is currently ${isCurrentlyBookmarked ? '' : 'not '}bookmarked`);
+      // First check if the bookmark already exists
+      const { data: existingBookmark, error: checkError } = await supabase
+        .from(BOOKMARKS_TABLE)
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('cafe_id', cafeId)
+        .single();
       
-      const userId = session.user.id;
+      if (checkError && checkError.code !== 'PGRST116') {
+        return { bookmarked: false, message: 'Failed to check bookmark status' };
+      }
       
-      if (isCurrentlyBookmarked) {
-        // Remove bookmark
-        console.log(`Removing bookmark for cafe ${cafeId}...`);
-        const { error } = await supabase
+      if (existingBookmark) {
+        // Bookmark exists, so remove it
+        const { error: deleteError } = await supabase
           .from(BOOKMARKS_TABLE)
           .delete()
-          .eq('user_id', userId)
-          .eq('cafe_id', cafeId);
-        
-        if (error) {
-          return handleSupabaseError(error, 'toggleBookmark-remove');
+          .eq('id', existingBookmark.id);
+          
+        if (deleteError) {
+          return { bookmarked: true, message: 'Failed to remove bookmark' };
         }
         
-        return {
-          bookmarked: false,
-          message: 'Cafe removed from bookmarks'
-        };
+        return { bookmarked: false, message: 'Bookmark removed' };
       } else {
-        // Add bookmark
-        console.log(`Adding bookmark for cafe ${cafeId}...`);
-        const { error } = await supabase
+        // Bookmark doesn't exist, so add it
+        const { error: insertError } = await supabase
           .from(BOOKMARKS_TABLE)
-          .insert({
-            user_id: userId,
-            cafe_id: cafeId,
-            created_at: new Date().toISOString()
-          });
-        
-        if (error) {
-          return handleSupabaseError(error, 'toggleBookmark-add');
+          .insert([
+            { 
+              user_id: session.user.id, 
+              cafe_id: cafeId,
+              created_at: new Date().toISOString()
+            }
+          ]);
+          
+        if (insertError) {
+          return { bookmarked: false, message: 'Failed to add bookmark' };
         }
         
-        return {
-          bookmarked: true,
-          message: 'Cafe added to bookmarks'
-        };
+        return { bookmarked: true, message: 'Bookmark added' };
       }
     } catch (error: any) {
       console.error(`Error toggling bookmark for cafe ${cafeId}:`, error);

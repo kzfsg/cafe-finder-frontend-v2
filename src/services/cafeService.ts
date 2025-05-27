@@ -4,129 +4,6 @@ import type { Cafe, CafeLocation } from '../data/cafes';
 // Supabase table names
 const CAFES_TABLE = 'cafes';
 
-// Log configuration for debugging
-console.log('Using Supabase for cafe data');
-
-/**
- * Test function to check Supabase storage access
- * This helps diagnose if there are permission or configuration issues
- */
-const testSupabaseStorage = async (): Promise<void> => {
-  try {
-    console.log('Testing Supabase storage access...');
-    
-    // Check if we can list buckets
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error('❌ Error accessing Supabase storage:', bucketsError);
-      if (bucketsError.message.includes('permission')) {
-        console.error('❌ This appears to be a permissions issue. Check your Supabase RLS policies and API keys.');
-      }
-      return;
-    }
-    
-    console.log('✅ Successfully accessed Supabase storage');
-    console.log('Available buckets:', buckets);
-    
-    // Check if cafe-images bucket exists
-    const cafeBucket = buckets?.find(bucket => bucket.name === 'cafe-images');
-    if (!cafeBucket) {
-      console.warn('⚠️ The cafe-images bucket does not exist. You need to create it in the Supabase dashboard.');
-      return;
-    }
-    
-    console.log('✅ cafe-images bucket exists');
-    
-    // Try to list files in the bucket
-    const { data: files, error: filesError } = await supabase.storage
-      .from('cafe-images')
-      .list('');
-    
-    if (filesError) {
-      console.error('❌ Error listing files in cafe-images bucket:', filesError);
-      return;
-    }
-    
-    console.log('✅ Successfully listed files in cafe-images bucket:', files);
-  } catch (error) {
-    console.error('❌ Unexpected error testing Supabase storage:', error);
-  }
-};
-
-/**
- * Helper function to create a test cafe image in Supabase storage
- * This can be used to test if image upload is working properly
- */
-const createTestCafeImage = async (cafeId: number): Promise<string | null> => {
-  try {
-    console.log(`Creating test image for cafe ${cafeId}...`);
-    
-    // First check if the bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const cafeBucket = buckets?.find(bucket => bucket.name === 'cafe-images');
-    
-    if (!cafeBucket) {
-      console.warn('⚠️ Cannot create test image: cafe-images bucket does not exist');
-      return null;
-    }
-    
-    // Create the cafe folder if it doesn't exist
-    const folderPath = `cafe-${cafeId}`;
-    const { data: folderFiles, error: folderError } = await supabase.storage
-      .from('cafe-images')
-      .list(folderPath);
-    
-    if (folderError && !folderError.message.includes('not found')) {
-      console.error(`❌ Error checking cafe folder: ${folderError.message}`);
-      return null;
-    }
-    
-    // Create a simple SVG image as a test
-    const testImageName = 'test-image.svg';
-    const testImageContent = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200" fill="#3498db"/><text x="50%" y="50%" font-family="Arial" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle">Cafe ${cafeId}</text></svg>`;
-    
-    // Convert SVG string to Blob
-    const blob = new Blob([testImageContent], { type: 'image/svg+xml' });
-    
-    // Upload the test image
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('cafe-images')
-      .upload(`${folderPath}/${testImageName}`, blob, {
-        contentType: 'image/svg+xml',
-        upsert: true
-      });
-    
-    if (uploadError) {
-      console.error(`❌ Error uploading test image: ${uploadError.message}`);
-      return null;
-    }
-    
-    console.log('✅ Successfully uploaded test image:', uploadData);
-    
-    // Get the public URL for the test image
-    const { data: { publicUrl } } = supabase.storage
-      .from('cafe-images')
-      .getPublicUrl(`${folderPath}/${testImageName}`);
-    
-    console.log('✅ Test image public URL:', publicUrl);
-    return publicUrl;
-  } catch (error) {
-    console.error('❌ Unexpected error creating test image:', error);
-    return null;
-  }
-};
-
-// Test Supabase storage access on initialization
-testSupabaseStorage().catch(error => {
-  console.error('Failed to test Supabase storage:', error);
-});
-
-// Create a test image for the first cafe
-createTestCafeImage(1).catch(error => {
-  console.error('Failed to create test image:', error);
-});
-
 // Helper function to handle Supabase errors
 const handleSupabaseError = (error: any, context: string) => {
   console.error(`Supabase error (${context}):`, error.message);
@@ -159,18 +36,8 @@ const ensureFullImageUrl = (imageUrl: string | null | undefined): string => {
  */
 const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
   try {
-    // Special debug for problematic cafes
-    const isProblematicCafe = [1, 2, 5].includes(cafeId);
-    if (isProblematicCafe) {
-      console.log(`🔍 DEBUGGING: Fetching images for problematic cafe ID ${cafeId}`);
-    } else {
-      console.log(`Fetching images for cafe ID ${cafeId}`);
-    }
-    
     // First, check if the bucket exists
-    console.log('Checking if the cafe-images bucket exists...');
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    console.log('Available buckets:', buckets);
     
     if (bucketsError) {
       console.error('Error listing storage buckets:', bucketsError);
@@ -180,79 +47,36 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
     // Check if our bucket exists
     const cafeBucket = buckets?.find(bucket => bucket.name === 'cafe-images');
     if (!cafeBucket) {
-      console.warn('The cafe-images bucket does not exist in Supabase storage');
-      
-      // Use a local fallback image instead of an external placeholder
-      // This is more reliable and prevents network errors
       return ['/images/no-image.svg'];
     }
     
     // List all files in the cafe's folder
     const folderPath = `cafe-${cafeId}`;
-    
-    if (isProblematicCafe) {
-      console.log(`🔍 DEBUGGING: Listing files in folder ${folderPath} for cafe ${cafeId}`);
-    }
-    
     const { data: files, error } = await supabase.storage
       .from('cafe-images')
       .list(folderPath);
     
     if (error) {
-      console.error(`❌ Error listing images for cafe ${cafeId}:`, error);
-      // Return a local fallback image instead of an empty array
+      console.error(`Error listing images for cafe ${cafeId}:`, error);
       return ['/images/no-image.svg'];
     }
     
-    if (isProblematicCafe) {
-      console.log(`🔍 DEBUGGING: Found ${files?.length || 0} files for cafe ${cafeId}:`);
-      console.log(files);
-    } else {
-      console.log(`Found ${files?.length || 0} images for cafe ${cafeId}:`, files);
-    }
-    
     // Filter out non-image files and the .emptyFolderPlaceholder
-    const imageFiles = files?.filter(file => {
-      // Check if it's not the .emptyFolderPlaceholder and has an image extension
-      const isNotPlaceholder = file.name !== '.emptyFolderPlaceholder';
-      const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
-      return isNotPlaceholder && hasImageExtension;
-    }) || [];
+    const imageFiles = files?.filter(file => 
+      file.name !== '.emptyFolderPlaceholder' && 
+      /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+    ) || [];
     
-    if (isProblematicCafe) {
-      console.log(`🔍 DEBUGGING: After filtering, found ${imageFiles.length} valid image files:`, imageFiles);
-    }
-    
-    if (!imageFiles || imageFiles.length === 0) {
-      console.log(`No valid images found for cafe ${cafeId}, using fallback image`);
-      // Use a local fallback image for consistency and reliability
+    if (!imageFiles.length) {
       return ['/images/no-image.svg'];
     }
     
     // Get public URLs for all valid image files
     const imageUrls = imageFiles.map(file => {
       const fullPath = `${folderPath}/${file.name}`;
-      if (isProblematicCafe) {
-        console.log(`🔍 DEBUGGING: Generating URL for file path: ${fullPath}`);
-      }
-      
       const { data: { publicUrl } } = supabase.storage
         .from('cafe-images')
         .getPublicUrl(fullPath);
-      
-      if (isProblematicCafe) {
-        console.log(`🔍 DEBUGGING: Generated URL: ${publicUrl}`);
-        // Check if the URL is valid by trying to fetch it
-        fetch(publicUrl, { method: 'HEAD' })
-          .then(response => {
-            console.log(`🔍 DEBUGGING: URL ${publicUrl} is ${response.ok ? 'valid' : 'invalid'} (${response.status})`);
-          })
-          .catch(err => {
-            console.error(`🔍 DEBUGGING: Error checking URL ${publicUrl}:`, err);
-          });
-      } else {
-        console.log(`Generated public URL for ${file.name}:`, publicUrl);
-      }
       
       return publicUrl;
     });
@@ -260,7 +84,6 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
     return imageUrls;
   } catch (error) {
     console.error('Error in getCafeImageUrls:', error);
-    // Return a local fallback image instead of an external placeholder
     return ['/images/no-image.svg'];
   }
 };
@@ -431,9 +254,6 @@ const cafeService = {
   getAllCafes: async (): Promise<Cafe[]> => {
     try {
       console.log('Fetching all cafes from Supabase...');
-      
-      // Run the storage test again to ensure it's working
-      await testSupabaseStorage();
       
       const { data: cafesData, error } = await supabase
         .from(CAFES_TABLE)

@@ -66,6 +66,7 @@ const authService = {
         options: {
           data: {
             username: data.username,
+            //email: data.email commented for future additions
           }
         }
       });
@@ -78,7 +79,7 @@ const authService = {
       return {
         user: formattedUser,
         session: authData.session,
-        message: !authData.session ? 'Please check your email to confirm your registration.' : undefined
+        message: !authData.session ? 'Please check your email to confirm your registration.' : undefined // to add in the future - need pay Supabase to send emails
       };
     } catch (error) {
       console.error('Registration error:', error);
@@ -88,29 +89,21 @@ const authService = {
 
   // Login user
   login: async (data: LoginData) => {
-    try {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.identifier, // Supabase uses email, not identifier
-        password: data.password
-      });
-      
-      if (error) throw error;
-      
-      if (!authData.session || !authData.user) {
-        throw new Error('No session or user data returned');
-      }
-      
-      // Format and return user data
-      const formattedUser = await formatUser(authData.user);
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: data.identifier,
+      password: data.password
+    });
+    
+    if (error) throw error;
+    
+    if (!authData.session || !authData.user) {
+      throw new Error('No session or user data returned');
+    }
       
       return {
-        user: formattedUser,
+        user: await formatUser(authData.user),
         session: authData.session
       };
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
   },
 
   // Logout user
@@ -149,7 +142,7 @@ const authService = {
   
   // Check if user is logged in
   isLoggedIn: async (): Promise<boolean> => {
-    const session = await authService.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     return !!session;
   },
 
@@ -165,7 +158,7 @@ const authService = {
   },
   
   // Update user profile
-  updateProfile: async (updates: Partial<User>): Promise<User | null> => {
+  updateProfile: async (updates: Partial<User>): Promise<User | null> => { // this is what strapi cant do in 300 lines done in just 40 lines
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
