@@ -255,22 +255,71 @@ const cafeService = {
     try {
       console.log('Fetching all cafes from Supabase...');
       
-      const { data: cafesData, error } = await supabase
+      // Create a timeout promise to prevent hanging
+      const timeoutPromise = new Promise<{data: null, error: Error}>((resolve) => {
+        setTimeout(() => {
+          console.warn('Cafe query timed out after 10 seconds');
+          resolve({
+            data: null,
+            error: new Error('Query timeout exceeded')
+          });
+        }, 10000); // 10 second timeout
+      });
+      
+      console.log('test - Starting cafe query');
+      
+      // Create the actual query promise
+      const queryPromise = supabase
         .from(CAFES_TABLE)
         .select('*')
         .order('name');
       
+      // Race the query against the timeout
+      const { data: cafesData, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]);
+      
+      console.log('test2 - Query completed or timed out');
+      
       if (error) {
+        console.error('Error fetching cafes:', error);
         return handleSupabaseError(error, 'getAllCafes');
       }
       
       if (!cafesData || cafesData.length === 0) {
-        console.log('No cafes found');
+        console.log('No cafes found or query timed out');
         return [];
       }
       
-      // Transform each cafe to our application format
-      const cafes = await Promise.all(cafesData.map(cafe => transformCafeData(cafe)));
+      // Transform each cafe to our application format with individual timeouts
+      const transformPromises = cafesData.map(cafe => {
+        // Wrap each transform in a timeout
+        const transformWithTimeout = Promise.race([
+          transformCafeData(cafe),
+          new Promise<Cafe>((resolve) => {
+            setTimeout(() => {
+              console.warn(`Transform for cafe ${cafe.id} timed out, using fallback`);
+              resolve({
+                id: cafe.id || 0,
+                name: cafe.name || 'Timeout Error',
+                description: 'This cafe data took too long to load',
+                location: { city: '', address: '', country: '' },
+                wifi: false,
+                powerOutletAvailable: false,
+                upvotes: 0,
+                downvotes: 0,
+                imageUrls: ['/images/placeholder.svg'],
+                created_at: new Date().toISOString()
+              });
+            }, 5000); // 5 second timeout for each transform
+          })
+        ]);
+        
+        return transformWithTimeout;
+      });
+      
+      const cafes = await Promise.all(transformPromises);
       console.log(`Fetched ${cafes.length} cafes`);
       return cafes;
     } catch (error) {
@@ -282,14 +331,34 @@ const cafeService = {
   // Get cafe by ID
   getCafeById: async (id: number): Promise<Cafe | null> => {
     try {
-      console.log(`Fetching cafe with ID ${id} from Supabase...`);
-      const { data: cafeData, error } = await supabase
+      console.log(`Fetching cafe with ID ${id}`);
+      
+      // Create a timeout promise to prevent hanging
+      const timeoutPromise = new Promise<{data: null, error: Error}>((resolve) => {
+        setTimeout(() => {
+          console.warn(`Cafe ID ${id} query timed out after 10 seconds`);
+          resolve({
+            data: null,
+            error: new Error(`Query timeout for cafe ID ${id}`)
+          });
+        }, 10000); // 10 second timeout
+      });
+      
+      // Create the actual query promise
+      const queryPromise = supabase
         .from(CAFES_TABLE)
         .select('*')
         .eq('id', id)
         .single();
       
+      // Race the query against the timeout
+      const { data: cafeData, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]);
+      
       if (error) {
+        console.error(`Error fetching cafe ID ${id}:`, error);
         return handleSupabaseError(error, `getCafeById-${id}`);
       }
       
@@ -298,8 +367,28 @@ const cafeService = {
         return null;
       }
       
-      // Transform the cafe data to our application format
-      return await transformCafeData(cafeData);
+      // Transform the cafe data with timeout protection
+      const transformPromise = transformCafeData(cafeData);
+      const transformTimeoutPromise = new Promise<Cafe>((resolve) => {
+        setTimeout(() => {
+          console.warn(`Transform for cafe ID ${id} timed out, using fallback`);
+          resolve({
+            id: id,
+            name: 'Timeout Error',
+            description: 'This cafe data took too long to load',
+            location: { city: '', address: '', country: '' },
+            wifi: false,
+            powerOutletAvailable: false,
+            upvotes: 0,
+            downvotes: 0,
+            imageUrls: ['/images/placeholder.svg'],
+            created_at: new Date().toISOString()
+          });
+        }, 5000); // 5 second timeout
+      });
+      
+      // Race the transform against a timeout
+      return await Promise.race([transformPromise, transformTimeoutPromise]);
     } catch (error) {
       console.error(`Error fetching cafe with ID ${id}:`, error);
       return null;
@@ -310,12 +399,32 @@ const cafeService = {
   searchCafes: async (query: string): Promise<Cafe[]> => {
     try {
       console.log(`Searching cafes for query: ${query}`);
-      const { data: cafesData, error } = await supabase
+      
+      // Create a timeout promise to prevent hanging
+      const timeoutPromise = new Promise<{data: null, error: Error}>((resolve) => {
+        setTimeout(() => {
+          console.warn('Search query timed out after 10 seconds');
+          resolve({
+            data: null,
+            error: new Error(`Search query timeout for '${query}'`)
+          });
+        }, 10000); // 10 second timeout
+      });
+      
+      // Create the actual query promise
+      const queryPromise = supabase
         .from(CAFES_TABLE)
         .select('*')
         .or(`name.ilike.%${query}%,description.ilike.%${query}%`);
       
+      // Race the query against the timeout
+      const { data: cafesData, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]);
+      
       if (error) {
+        console.error(`Search error for query '${query}':`, error);
         return handleSupabaseError(error, `searchCafes-${query}`);
       }
       
@@ -332,44 +441,7 @@ const cafeService = {
     }
   },
   
-  // Upvote a cafe
-  upvoteCafe: async (cafeId: number): Promise<boolean> => {
-    try {
-      // First get the current upvote count
-      const { data: cafeData, error: getError } = await supabase
-        .from(CAFES_TABLE)
-        .select('upvotes')
-        .eq('id', cafeId)
-        .single();
-      
-      if (getError) {
-        return handleSupabaseError(getError, `upvoteCafe-get-${cafeId}`);
-      }
-      
-      if (!cafeData) {
-        console.error('No cafe found with ID:', cafeId);
-        return false;
-      }
-      
-      // Increment the upvote count
-      const newUpvotes = (cafeData.upvotes || 0) + 1;
-      
-      // Update the cafe with the new upvote count
-      const { error: updateError } = await supabase
-        .from(CAFES_TABLE)
-        .update({ upvotes: newUpvotes })
-        .eq('id', cafeId);
-      
-      if (updateError) {
-        return handleSupabaseError(updateError, `upvoteCafe-update-${cafeId}`);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error(`Error upvoting cafe with ID ${cafeId}:`, error);
-      return false;
-    }
-  },
+  // Note: Upvote functionality has been moved to upvoteService.ts
   
   // Get upvoted cafes - this would require a separate table for user upvotes
   // For now, we'll just return all cafes with upvotes > 0

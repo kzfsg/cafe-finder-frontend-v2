@@ -38,21 +38,48 @@ export type { User, AuthChangeCallback };
 const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
   if (!supabaseUser || !supabaseUser.email) return null;
   
-  // Get profile data from profiles table
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', supabaseUser.id)
-    .single();
-  
-  return {
-    id: supabaseUser.id,
-    email: supabaseUser.email,
-    username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0], // for future social logins
-    created_at: supabaseUser.created_at || new Date().toISOString(),
-    updated_at: profile?.updated_at || supabaseUser.updated_at,
-    avatar_url: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url,
-  };
+  try {
+    // Get profile data from profiles table with timeout protection
+    const profilePromise = supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', supabaseUser.id)
+      .single();
+    
+    // Add a timeout to prevent hanging
+    const timeoutPromise = new Promise<{data: null}>((_, reject) => {
+      setTimeout(() => {
+        console.warn('Profile fetch timed out, using fallback data');
+        reject(new Error('Profile fetch timeout'));
+      }, 5000);
+    });
+    
+    // Race the query against the timeout
+    const { data: profile } = await Promise.race([
+      profilePromise,
+      timeoutPromise
+    ]).catch(() => ({ data: null })); // Fallback to null if either promise rejects
+    
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0], // for future social logins
+      created_at: supabaseUser.created_at || new Date().toISOString(),
+      updated_at: profile?.updated_at || supabaseUser.updated_at || new Date().toISOString(),
+      avatar_url: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url || '',
+    };
+  } catch (error) {
+    console.error('Error formatting user:', error);
+    // Return basic user info without profile data
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      username: supabaseUser.user_metadata?.username || supabaseUser.email.split('@')[0],
+      created_at: supabaseUser.created_at || new Date().toISOString(),
+      updated_at: supabaseUser.updated_at || new Date().toISOString(),
+      avatar_url: supabaseUser.user_metadata?.avatar_url || '',
+    };
+  }
 };
 
 // Authentication service methods

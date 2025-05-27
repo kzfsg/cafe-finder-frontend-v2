@@ -15,7 +15,7 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
   onUpvote 
 }) => {
   const [isUpvoted, setIsUpvoted] = useState(false);
-  const [isUpvoting, setIsUpvoting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(upvotes);
   
   // Check if cafe is upvoted on component mount
@@ -39,47 +39,58 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
     setUpvoteCount(upvotes);
   }, [upvotes]);
 
-  const handleUpvote = async (e: React.MouseEvent) => {
+  const handleToggleUpvote = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent element click
-    console.log('Upvote button clicked with cafeId:', cafeId);
-    if (isUpvoting || !cafeId) {
-      console.log('Upvote aborted: isUpvoting=', isUpvoting, 'cafeId=', cafeId);
+    
+    // Don't allow upvoting if already in progress or no cafeId
+    if (isLoading || !cafeId) {
+      console.log('Upvote aborted: loading =', isLoading, 'cafeId =', cafeId);
       return;
     }
     
-    setIsUpvoting(true);
+    console.log('Attempting to toggle upvote for cafe:', cafeId, 'Current upvote status:', isUpvoted);
+    setIsLoading(true);
+    
     try {
-      console.log('Calling upvoteService.upvoteCafe with cafeId:', cafeId);
-      const result = await upvoteService.upvoteCafe(cafeId); // calls upvoteCafe
-      console.log('Upvote result:', result);
-      // Update local state
-      setIsUpvoted(true);
-      const newUpvotes = upvoteCount + 1;
-      setUpvoteCount(newUpvotes);
+      // Call the toggleUpvote service function
+      console.log('Calling upvoteService.toggleUpvote with cafeId:', cafeId);
+      const result = await upvoteService.toggleUpvote(cafeId);
+      console.log('Toggle upvote result:', result);
       
-      // Call parent callback if provided
-      if (onUpvote) {
-        onUpvote(cafeId, newUpvotes, {} as Cafe);
+      if (result.success) {
+        // Update local state based on the server response
+        console.log('Upvote operation successful, new status:', result.upvoted ? 'upvoted' : 'not upvoted');
+        setIsUpvoted(result.upvoted);
+        setUpvoteCount(result.upvotes);
+        
+        // Notify parent component if callback provided
+        if (onUpvote && result.cafe) {
+          console.log('Calling parent onUpvote callback with new upvote count:', result.upvotes);
+          onUpvote(cafeId, result.upvotes, result.cafe);
+        }
+      } else {
+        // Handle unsuccessful upvote operation
+        console.error('Failed to toggle upvote for cafe:', cafeId, 'Result:', result);
       }
     } catch (error) {
-      console.error('Error toggling upvote:', error);
+      console.error('Error toggling upvote for cafe:', cafeId, error);
     } finally {
-      setIsUpvoting(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <button 
-      className={`upvote-button ${isUpvoted ? 'upvoted' : ''} ${isUpvoting ? 'loading' : ''}`}
-      onClick={handleUpvote}
+      className={`upvote-button ${isUpvoted ? 'upvoted' : ''} ${isLoading ? 'loading' : ''}`}
+      onClick={handleToggleUpvote}
       title={isUpvoted ? 'Remove upvote' : 'Upvote this cafe'}
-      disabled={isUpvoting}
-      aria-busy={isUpvoting}
+      disabled={isLoading}
+      aria-busy={isLoading}
     >
       <img 
         src="/icons/upvote.svg" 
         alt={isUpvoted ? 'Upvoted' : 'Upvote'} 
-        className={`upvote-icon ${isUpvoted ? 'active' : ''} ${isUpvoting ? 'loading' : ''}`} 
+        className={`upvote-icon ${isUpvoted ? 'active' : ''} ${isLoading ? 'loading' : ''}`} 
       />
       <span className="upvote-count">{upvoteCount}</span>
     </button>

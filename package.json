@@ -16,10 +16,12 @@
     "@mantine/notifications": "^8.0.1",
     "@tabler/icons-react": "^3.33.0",
     "@tanstack/react-query": "^5.77.1",
+    "@types/react-toastify": "^4.0.2",
     "axios": "^1.9.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.0"
+    "react-router-dom": "^7.6.0",
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

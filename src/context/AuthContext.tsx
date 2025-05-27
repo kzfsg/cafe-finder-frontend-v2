@@ -46,21 +46,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     initializeAuth();
     
-    // Subscribe to auth changes
+    // Subscribe to auth changes - avoid deadlock by using setTimeout
     const { data: { subscription } } = authService.onAuthStateChange(
-      async (_event, newSession) => {
-        // Update session state
+      (_event, newSession) => {
+        // Update session state synchronously
         setSession(newSession);
         setIsAuthenticated(!!newSession);
         
-        if (newSession) {
-          // Session exists, get user data
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-        } else {
-          // No session, clear user data
-          setUser(null);
-        }
+        // Use setTimeout to break the chain and avoid deadlock
+        setTimeout(async () => {
+          if (newSession) {
+            try {
+              // Session exists, get user data
+              const userData = await authService.getCurrentUser();
+              setUser(userData);
+            } catch (error) {
+              console.error('Error fetching user data after auth change:', error);
+              setUser(null);
+            }
+          } else {
+            // No session, clear user data
+            setUser(null);
+          }
+        }, 0);
       }
     );
     
