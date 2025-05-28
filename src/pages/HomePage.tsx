@@ -99,6 +99,19 @@ export default function HomePage() {
     setSelectedCafe(cafe);
     setDetailsModalOpen(true);
   };
+  
+  // Handle upvote/downvote updates to keep state in sync between card and details view
+  const handleVoteUpdate = (cafeId: number, updatedCafe: Cafe) => {
+    // Update the cafe in the list
+    const updatedCafes = cafes.map(cafe => 
+      cafe.id === cafeId ? { ...cafe, ...updatedCafe } : cafe
+    );
+    
+    // If this is the currently selected cafe, update it too
+    if (selectedCafe && selectedCafe.id === cafeId) {
+      setSelectedCafe({ ...selectedCafe, ...updatedCafe });
+    }
+  };
 
   // Handle closing the cafe details modal
   const handleCloseDetails = () => {
@@ -199,8 +212,11 @@ export default function HomePage() {
                 hasWifi={cafe.wifi || false}
                 hasPower={cafe.powerOutletAvailable || false}
                 upvotes={cafe.upvotes || 0}
+                downvotes={cafe.downvotes || 0}
                 distance={cafe.distance}
                 onClick={() => handleCafeClick(cafe)}
+                onUpvote={(_, __, updatedCafe) => handleVoteUpdate(cafe.id, updatedCafe)}
+                onDownvote={(_, __, updatedCafe) => handleVoteUpdate(cafe.id, updatedCafe)}
               />
             ))}
           </SimpleGrid>
@@ -224,6 +240,7 @@ export default function HomePage() {
           <CafeDetails
             cafe={selectedCafe}
             onClose={handleCloseDetails}
+            onVoteUpdate={(updatedCafe) => handleVoteUpdate(selectedCafe.id, updatedCafe)}
           />
         )}
       </Modal>

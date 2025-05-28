@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import BookmarkButton from './BookmarkButton';
 import UpvoteButton from './UpvoteButton';
+import DownvoteButton from './DownvoteButton';
 import type { Cafe } from '../data/cafes';
 
 interface CafeCardProps {
@@ -16,12 +17,14 @@ interface CafeCardProps {
   wifi?: boolean; // New Supabase field
   powerOutletAvailable?: boolean; // New Supabase field
   upvotes?: number;
+  downvotes?: number;
   distance?: number; // Distance from user in kilometers
   onUpvote?: (id: number, newUpvotes: number, cafe: Cafe) => void;
+  onDownvote?: (id: number, newDownvotes: number, cafe: Cafe) => void;
   onClick?: () => void;
 }
 
-export default function CafeCard({ id = 0, title, name, image, images = [], description, hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, distance, onUpvote, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, title, name, image, images = [], description, hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, downvotes = 0, distance, onUpvote, onDownvote, onClick }: CafeCardProps) {
   // Use name as title if title is not provided (for Supabase compatibility)
   const displayTitle = title || name || 'Unnamed Cafe';
   // No need for upvote state management here - moved to UpvoteButton component
@@ -93,8 +96,21 @@ export default function CafeCard({ id = 0, title, name, image, images = [], desc
         {/* Bookmark button */}
         <BookmarkButton cafeId={id} />
         
-        {/* Upvote button */}
-        <UpvoteButton cafeId={id} upvotes={upvotes} />
+        <div className="card-vote-buttons">
+          {/* Upvote button */}
+          <UpvoteButton 
+            cafeId={id} 
+            upvotes={upvotes} 
+            onUpvote={onUpvote}
+          />
+          
+          {/* Downvote button */}
+          <DownvoteButton 
+            cafeId={id} 
+            downvotes={downvotes} 
+            onDownvote={onDownvote}
+          />
+        </div>
         
         {uniqueImages.length > 1 && (
           <div className="gallery-indicators">
@@ -125,11 +141,6 @@ export default function CafeCard({ id = 0, title, name, image, images = [], desc
                 className="amenity-icon" 
               />
             </div>
-            <UpvoteButton 
-              cafeId={id} 
-              upvotes={upvotes} 
-              onUpvote={onUpvote as ((id: number, newUpvotes: number, cafe: Cafe) => void)}
-            />
           </div>
         </div>
         {distance !== undefined && (

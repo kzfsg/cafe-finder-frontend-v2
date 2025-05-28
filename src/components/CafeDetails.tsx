@@ -10,9 +10,10 @@ import { formatDistanceToNow } from 'date-fns';
 interface CafeDetailsProps {
   cafe: Cafe;
   onClose: () => void;
+  onVoteUpdate?: (updatedCafe: Cafe) => void;
 }
 
-const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
+const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose, onVoteUpdate }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({
@@ -120,7 +121,10 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
               cafeId={cafe.id}
               upvotes={cafe.upvotes || 0}
               onUpvote={(_, newUpvoteCount, updatedCafe) => {
-                // You could update the cafe state here if needed
+                // Update the cafe state if callback is provided
+                if (onVoteUpdate && updatedCafe) {
+                  onVoteUpdate(updatedCafe);
+                }
                 console.log('Cafe upvoted to', newUpvoteCount, updatedCafe);
               }}
             />
@@ -128,7 +132,10 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
               cafeId={cafe.id}
               downvotes={cafe.downvotes || 0}
               onDownvote={(_, newDownvoteCount, updatedCafe) => {
-                // You could update the cafe state here if needed
+                // Update the cafe state if callback is provided
+                if (onVoteUpdate && updatedCafe) {
+                  onVoteUpdate(updatedCafe);
+                }
                 console.log('Cafe downvoted to', newDownvoteCount, updatedCafe);
               }}
             />
