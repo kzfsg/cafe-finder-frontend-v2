@@ -4,10 +4,10 @@ import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
+import BookmarkPage from './pages/BookmarkPage';
 import CafeDetails from './components/CafeDetails';
 import Login from './components/auth/Login';
 import SignUp from './components/auth/SignUp';
-import Bookmarks from './components/Bookmarks';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { Cafe } from './data/cafes';
 import './App.css';
@@ -61,7 +61,7 @@ function App() {
                     path="/bookmarks" 
                     element={
                       <ProtectedRoute>
-                        <Bookmarks />
+                        <BookmarkPage />
                       </ProtectedRoute>
                     } 
                   />
