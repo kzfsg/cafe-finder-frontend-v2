@@ -1,10 +1,15 @@
 export interface Review {
-  id: number;
-  userName: string;
-  userImage?: string;
-  rating: number; // 1-5 stars
+  id: string;
+  user_id: string;
+  cafe_id: number;
+  rating: boolean; // true for positive, false for negative
   comment: string;
-  date: string;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    username: string;
+    avatar_url?: string;
+  };
 }
 
 // Interface for Supabase location JSON field

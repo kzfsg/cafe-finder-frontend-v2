@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import type { Cafe } from '../data/cafes';
+import React, { useState, useEffect } from 'react';
+import type { Cafe, Review } from '../data/cafes';
 import '../styles/CafeDetails.css';
 import UpvoteButton from './UpvoteButton';
+import reviewService, { type ReviewSubmission } from '../services/reviewService';
+import { useAuth } from '../context/AuthContext';
+import { formatDistanceToNow } from 'date-fns';
 
 interface CafeDetailsProps {
   cafe: Cafe;
@@ -12,29 +15,89 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({
-    rating: 5,
+    rating: true, // true for positive, false for negative
     comment: ''
   });
+  const [cafeReviews, setCafeReviews] = useState<Review[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userReview, setUserReview] = useState<Review | null>(null);
+  const { user } = useAuth();
 
   // Upvote functionality is now handled by the UpvoteButton component
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  // Fetch cafe reviews on component mount
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const reviews = await reviewService.getCafeReviews(cafe.id);
+      setCafeReviews(reviews);
+      
+      // Check if the current user has already reviewed this cafe
+      if (user) {
+        const existingReview = await reviewService.hasUserReviewedCafe(cafe.id, user.id);
+        if (existingReview) {
+          setUserReview(existingReview);
+          setNewReview({
+            rating: existingReview.rating,
+            comment: existingReview.comment
+          });
+        }
+      }
+    };
+    
+    fetchReviews();
+  }, [cafe.id, user]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This would be connected to an API in a real app
-    console.log('New review submitted:', newReview);
-    // Reset form and hide it
-    setNewReview({ rating: 5, comment: '' });
-    setShowReviewForm(false);
+    if (!user) {
+      alert('You must be logged in to leave a review');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const reviewData: ReviewSubmission = {
+        cafe_id: cafe.id,
+        rating: newReview.rating,
+        comment: newReview.comment
+      };
+      
+      const result = await reviewService.addReview(reviewData, user);
+      
+      if (result) {
+        // Update the reviews list
+        if (userReview) {
+          // Update existing review in the list
+          setCafeReviews(prev => 
+            prev.map(review => review.id === result.id ? result : review)
+          );
+        } else {
+          // Add new review to the list
+          setCafeReviews(prev => [result, ...prev]);
+        }
+        
+        // Update user review reference
+        setUserReview(result);
+        
+        // Reset form and hide it
+        setNewReview({ rating: true, comment: '' });
+        setShowReviewForm(false);
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const renderStars = (rating: number) => {
+  const renderRating = (isPositive: boolean) => {
     return (
-      <div className="stars">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span key={star} className={star <= rating ? 'star filled' : 'star'}>
-            ★
-          </span>
-        ))}
+      <div className="rating">
+        <span className={`rating-icon ${isPositive ? 'positive' : 'negative'}`}>
+          {isPositive ? '👍' : '👎'}
+        </span>
       </div>
     );
   };
@@ -148,29 +211,38 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
       <section className="cafe-reviews-section">
         <div className="reviews-header">
           <h2>Reviews</h2>
-          <button 
-            className="add-review-button"
-            onClick={() => setShowReviewForm(!showReviewForm)}
-          >
-            {showReviewForm ? 'Cancel' : 'Add Review'}
-          </button>
+          {user ? (
+            <button 
+              className="add-review-button"
+              onClick={() => setShowReviewForm(!showReviewForm)}
+            >
+              {userReview ? 'Edit Your Review' : 'Add Review'}
+            </button>
+          ) : (
+            <p className="login-prompt">Please log in to leave a review</p>
+          )}
         </div>
 
         {/* Review Form */}
-        {showReviewForm && (
+        {showReviewForm && user && (
           <form className="review-form" onSubmit={handleSubmitReview}>
             <div className="rating-input">
               <label>Your Rating:</label>
-              <div className="stars-input">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span 
-                    key={star} 
-                    className={star <= newReview.rating ? 'star filled' : 'star'}
-                    onClick={() => setNewReview({...newReview, rating: star})}
-                  >
-                    ★
-                  </span>
-                ))}
+              <div className="rating-buttons">
+                <button 
+                  type="button"
+                  className={`rating-button ${newReview.rating ? 'active' : ''}`}
+                  onClick={() => setNewReview({...newReview, rating: true})}
+                >
+                  👍 Positive
+                </button>
+                <button 
+                  type="button"
+                  className={`rating-button ${!newReview.rating ? 'active' : ''}`}
+                  onClick={() => setNewReview({...newReview, rating: false})}
+                >
+                  👎 Negative
+                </button>
               </div>
             </div>
             <div className="comment-input">
@@ -183,29 +255,65 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
                 required
               />
             </div>
-            <button type="submit" className="submit-review-button">Submit Review</button>
+            <button 
+              type="submit" 
+              className="submit-review-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : userReview ? 'Update Review' : 'Submit Review'}
+            </button>
           </form>
         )}
 
         {/* Reviews List */}
         <div className="reviews-list">
-          {cafe.reviews && cafe.reviews.length > 0 ? cafe.reviews.map((review) => (
+          {cafeReviews.length > 0 ? cafeReviews.map((review) => (
             <div key={review.id} className="review-item">
               <div className="review-header">
                 <div className="reviewer-info">
-                  {review.userImage ? (
-                    <img src={review.userImage} alt={review.userName} className="reviewer-image" />
+                  {review.user?.avatar_url ? (
+                    <img src={review.user.avatar_url} alt={review.user.username} className="reviewer-image" />
                   ) : (
-                    <div className="reviewer-initial">{review.userName.charAt(0)}</div>
+                    <div className="reviewer-initial">{review.user?.username.charAt(0) || '?'}</div>
                   )}
                   <div className="reviewer-details">
-                    <span className="reviewer-name">{review.userName}</span>
-                    <span className="review-date">{review.date}</span>
+                    <span className="reviewer-name">{review.user?.username || 'Anonymous'}</span>
+                    <span className="review-date">{formatDistanceToNow(new Date(review.created_at))} ago</span>
                   </div>
                 </div>
-                {renderStars(review.rating)}
+                {renderRating(review.rating)}
               </div>
               <p className="review-comment">{review.comment}</p>
+              {user && review.user_id === user.id && (
+                <div className="review-actions">
+                  <button 
+                    className="edit-review-button"
+                    onClick={() => {
+                      setNewReview({
+                        rating: review.rating,
+                        comment: review.comment
+                      });
+                      setShowReviewForm(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="delete-review-button"
+                    onClick={async () => {
+                      if (window.confirm('Are you sure you want to delete your review?')) {
+                        const success = await reviewService.deleteReview(review.id, user.id);
+                        if (success) {
+                          setCafeReviews(prev => prev.filter(r => r.id !== review.id));
+                          setUserReview(null);
+                        }
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           )) : (
             <p className="no-reviews">No reviews yet. Be the first to leave a review!</p>
