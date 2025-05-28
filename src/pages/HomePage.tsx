@@ -22,9 +22,25 @@ export default function HomePage() {
   const [searchParams] = useSearchParams();
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  
+  // Log initial render and search params
+  console.group('🏠 HomePage Render');
+  console.log('🔍 Initial URL Search Params:', Object.fromEntries(searchParams.entries()));
 
   // Extract search parameters from URL
   const query = searchParams.get('q') || '';
+  
+  console.log('📋 Extracted search parameters:', {
+    query,
+    location: searchParams.get('location') || 'N/A',
+    wifi: searchParams.get('wifi') || 'false',
+    powerOutlet: searchParams.get('powerOutlet') || 'false',
+    seatingCapacity: searchParams.get('seatingCapacity') || 'N/A',
+    noiseLevel: searchParams.get('noiseLevel') || 'N/A',
+    priceRange: searchParams.get('priceRange') || 'N/A',
+    upvotes: searchParams.get('upvotes') || 'N/A',
+    downvotes: searchParams.get('downvotes') || 'N/A'
+  });
   const location = searchParams.get('location') || '';
   const wifi = searchParams.get('wifi') === 'true';
   const powerOutlet = searchParams.get('powerOutlet') === 'true';
@@ -35,6 +51,7 @@ export default function HomePage() {
   const downvotes = searchParams.get('downvotes') ? Number(searchParams.get('downvotes')) : null;
 
   // Create filters object from URL parameters
+  console.log('🔄 Creating filters object');
   const filters: FilterOptions = {
     location,
     wifi,
@@ -50,17 +67,39 @@ export default function HomePage() {
   const hasSearchParams = query || Object.values(filters).some(value => 
     value !== '' && value !== false && value !== null
   );
+  
+  console.log('🔍 Search mode:', hasSearchParams ? 'SEARCH' : 'GET ALL');
+  console.log('Active filters:', Object.entries(filters)
+    .filter(([_, value]) => value !== null && value !== '' && value !== false)
+    .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
+  );
 
   // Fetch cafes using React Query - use search if parameters exist, otherwise get all
   const { data: cafes = [], isLoading, error, refetch } = useQuery<Cafe[]>({
     queryKey: ['cafes', query, filters],
-    queryFn: () => hasSearchParams 
-      ? searchService.searchCafes(query, filters)
-      : cafeService.getAllCafes(),
+    queryFn: async () => {
+      try {
+        if (hasSearchParams) {
+          console.log('🔍 Executing search with:', { query, filters });
+          const results = await searchService.searchCafes(query, filters);
+          console.log('✅ Search results:', results);
+          return results;
+        } else {
+          console.log('📚 Fetching all cafes');
+          const results = await cafeService.getAllCafes();
+          console.log('✅ All cafes:', results);
+          return results;
+        }
+      } catch (error) {
+        console.error('❌ Error in queryFn:', error);
+        throw error;
+      }
+    },
   });
 
   // Handle opening the cafe details modal
   const handleCafeClick = (cafe: Cafe) => {
+    console.log('👆 Cafe clicked:', { id: cafe.id, name: cafe.name || 'Unnamed' });
     setSelectedCafe(cafe);
     setDetailsModalOpen(true);
   };
@@ -72,7 +111,8 @@ export default function HomePage() {
     setTimeout(() => setSelectedCafe(null), 300);
   };
 
-  if (isLoading) { //loading animation
+  if (isLoading) {
+    console.log('⏳ Loading cafes...');
     return (
       <Container size="lg" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
         <Loader size="xl" type="dots" /> 
@@ -81,6 +121,7 @@ export default function HomePage() {
   }
 
   if (error) {
+    console.error('❌ Error loading cafes:', error);
     return (
       <Container size="lg" py="xl">
         <Text c="red" size="lg" fw={500} mb="md">
@@ -94,6 +135,7 @@ export default function HomePage() {
 
   // Show no results message if search was performed but no cafes found
   if (hasSearchParams && cafes.length === 0) {
+    console.log('❌ No cafes found matching search criteria');
     return (
       <Container size="lg" py="xl">
         <Text size="lg" mb="md">
@@ -106,6 +148,7 @@ export default function HomePage() {
     );
   }
 
+  console.log('✅ Displaying cafes:', cafes.length > 0 ? `Found ${cafes.length} cafes` : 'No cafes to display');
   return (
     <>
       <Container size="lg" py="xl">

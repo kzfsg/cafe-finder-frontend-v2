@@ -33,19 +33,27 @@ const searchService = {
   // Search cafes by query and filters
   searchCafes: async (query: string, filters?: FilterOptions): Promise<Cafe[]> => {
     try {
-      console.log(`Searching cafes for query: ${query}`, filters);
+      console.group('🔍 searchService.searchCafes');
+      console.log('Search parameters:', { query, filters });
       
       // Start with a base query
       let queryBuilder = supabase
         .from(CAFES_TABLE)
         .select('*');
       
+      console.log('Initial query builder created');
+      
       // Apply text search if query is provided
       if (query && query.trim() !== '') {
-        queryBuilder = queryBuilder.or(`name.ilike.%${query}%,description.ilike.%${query}%,location.ilike.%${query}%`);
+        const searchPattern = `%${query}%`;
+        console.log(`Applying text search for query: ${query}`, { searchPattern });
+        queryBuilder = queryBuilder.or(`name.ilike.${searchPattern},description.ilike.${searchPattern},location.ilike.${searchPattern}`);
+      } else {
+        console.log('No text search query provided');
       }
       
       // Apply filters if provided
+      console.log('Applying filters:', filters);
       if (filters) {
         // Location filter
         if (filters.location && filters.location.trim() !== '') {
@@ -95,7 +103,11 @@ const searchService = {
         }
       }
       
+      // Log the final query builder state
+      console.log('Final query builder:', queryBuilder);
+      
       // Create a timeout promise to prevent hanging
+      console.log('Creating query with 10s timeout');
       const timeoutPromise = new Promise<{data: null, error: Error}>((resolve) => {
         setTimeout(() => {
           console.warn('Search query timed out after 10 seconds');
@@ -107,25 +119,38 @@ const searchService = {
       });
       
       // Race the query against the timeout
+      console.log('Executing query...');
       const { data: cafesData, error } = await Promise.race([
         queryBuilder,
         timeoutPromise
       ]);
       
+      console.log('Query completed', { hasData: !!cafesData, error });
+      
       if (error) {
-        console.error(`Search error for query '${query}':`, error);
+        console.error(`❌ Search error for query '${query}':`, error);
+        console.groupEnd();
         return handleSupabaseError(error, `searchCafes-${query}`);
       }
       
       if (!cafesData || cafesData.length === 0) {
-        console.log('No matching cafes found for query:', query);
+        console.log(`🔍 No matching cafes found for query: ${query}`);
+        console.groupEnd();
         return [];
       }
       
+      console.log(`✅ Found ${cafesData.length} cafes matching search criteria`);
+      
       // Transform each cafe to our application format
-      return await Promise.all(cafesData.map(cafe => transformCafeData(cafe)));
+      console.log('Transforming cafe data...');
+      const transformedCafes = await Promise.all(cafesData.map(cafe => transformCafeData(cafe)));
+      
+      console.log('✅ Search completed successfully');
+      console.groupEnd();
+      return transformedCafes;
     } catch (error) {
-      console.error('Error searching cafes:', error);
+      console.error('❌ Error in searchCafes:', error);
+      console.groupEnd();
       return [];
     }
   },
