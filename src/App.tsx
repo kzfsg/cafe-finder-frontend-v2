@@ -34,13 +34,30 @@ import type { FilterOptions } from './components/FilterDropdown';
 
 // Main App component with providers
 function App() {
-  const handleSearch = (query: string, filters?: FilterOptions) => {
-    // Search functionality is handled in the HomePage component
+  const handleSearch = (query: string, filters: FilterOptions = {}) => {
     console.log('Search query in App:', query);
     console.log('Search filters in App:', filters);
     
-    // We're just logging the search parameters here since the actual search
-    // functionality is implemented in the HomePage component via React Query
+    // Create URLSearchParams object to handle query parameters
+    const params = new URLSearchParams();
+    
+    // Add search query if it exists
+    if (query) {
+      params.set('q', query);
+    }
+    
+    // Add filters to the URL parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== null && value !== '' && value !== false) {
+        params.set(key, String(value));
+      }
+    });
+    
+    // Update the URL with the search parameters
+    window.history.pushState({}, '', `?${params.toString()}`);
+    
+    // Dispatch a popstate event to trigger a re-render with the new URL
+    window.dispatchEvent(new Event('popstate'));
   };
 
   return (

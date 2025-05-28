@@ -23,7 +23,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query, filters);
+    console.log('Search submitted:', { query, filters });
+    onSearch(query, { ...filters }); // Ensure we're passing a new object reference
   };
 
   const handleFilterChange = (updatedFilters: FilterOptions) => {

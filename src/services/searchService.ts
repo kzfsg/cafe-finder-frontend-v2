@@ -62,22 +62,22 @@ const searchService = {
         
         // WiFi filter
         if (filters.wifi === true) {
-          queryBuilder = queryBuilder.eq('wifi_available', true);
+          queryBuilder = queryBuilder.eq('wifi', true);
         }
         
         // Power outlet filter
         if (filters.powerOutlet === true) {
-          queryBuilder = queryBuilder.eq('power_outlets', true);
+          queryBuilder = queryBuilder.eq('powerOutletAvailable', true);
         }
         
         // Seating capacity filter
         if (filters.seatingCapacity && filters.seatingCapacity > 0) {
-          queryBuilder = queryBuilder.gte('seating_capacity', filters.seatingCapacity);
+          queryBuilder = queryBuilder.gte('seatingCapacity', filters.seatingCapacity);
         }
         
         // Noise level filter
         if (filters.noiseLevel) {
-          queryBuilder = queryBuilder.eq('noise_level', filters.noiseLevel);
+          queryBuilder = queryBuilder.eq('noiseLevel', filters.noiseLevel);
         }
         
         // Price range filter
@@ -85,10 +85,10 @@ const searchService = {
           const priceValue = parseInt(filters.priceRange);
           if (filters.priceRange === '20') {
             // For $20 and above
-            queryBuilder = queryBuilder.gte('price_range', 20);
+            queryBuilder = queryBuilder.gte('priceRange', 20);
           } else {
             // For other price ranges ($5, $10, $15)
-            queryBuilder = queryBuilder.lte('price_range', priceValue);
+            queryBuilder = queryBuilder.lte('priceRange', priceValue);
           }
         }
         
