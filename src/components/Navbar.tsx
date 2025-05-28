@@ -19,7 +19,13 @@ export default function Navbar({ onSearch }: NavbarProps) {
   };
 
   return (
-    <nav className="navbar"> 
+    <nav className="navbar" style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
+      backgroundColor: '#fff',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+    }}> 
       <div className="navbar-left">
         <Link to="/" className="logo-link">
           <div className="logo">
