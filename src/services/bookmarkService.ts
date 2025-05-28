@@ -16,17 +16,31 @@ interface BookmarkResponse {
   message: string;
 }
 
-// Ensure image URLs are properly formatted
+// Ensure image URLs are properly formatted for Supabase
 const ensureFullImageUrl = (imageUrl: string | null | undefined): string => {
-  if (!imageUrl) return '/images/placeholder.svg';
+  // Default fallback image (local SVG)
+  const defaultImage = '/images/no-image.svg';
   
-  // If it's already a full URL or a local path starting with '/'
-  if (imageUrl.startsWith('http') || imageUrl.startsWith('/')) {
-    return imageUrl;
+  // Handle null, undefined, or empty strings
+  if (!imageUrl) return defaultImage;
+  
+  try {
+    // If it's already a full URL, return it as is
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // If it's a local path starting with '/', return it as is
+    if (imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // Otherwise, assume it's a relative path and add the base URL
+    return `/images/${imageUrl}`;
+  } catch (error) {
+    console.error('Error processing image URL:', error);
+    return defaultImage;
   }
-  
-  // Otherwise, assume it's a relative path and add the base URL
-  return `/images/${imageUrl}`;
 };
 
 const bookmarkService = {
@@ -37,8 +51,11 @@ const bookmarkService = {
     try {
       const session = await authService.getSession();
       if (!session) {
+        console.log('No active session');
         return [];
       }
+      
+      console.log('Fetching bookmarked cafes for user:', session.user.id);
       
       // Get the user's bookmarks with joined cafe data
       const { data: bookmarks, error } = await supabase
@@ -50,6 +67,7 @@ const bookmarkService = {
         .eq('user_id', session.user.id);
       
       if (error) {
+        console.error('Error fetching bookmarked cafes:', error);
         return handleSupabaseError(error, 'getBookmarkedCafes');
       }
       
@@ -67,23 +85,49 @@ const bookmarkService = {
         if (Object.keys(cafe).length === 0) return null;
         
         try {
+          // Handle images array if it exists
+          const imageUrls: string[] = [];
+          if (cafe.images && Array.isArray(cafe.images)) {
+            cafe.images.forEach((img: any) => {
+              const url = ensureFullImageUrl(img);
+              if (url) imageUrls.push(url);
+            });
+          }
+          
+          // Get the main image or use the first image from the array
+          const mainImage = cafe.image ? ensureFullImageUrl(cafe.image) : 
+                          (imageUrls.length > 0 ? imageUrls[0] : '/images/no-image.svg');
+          
           // Format the cafe data to match our application's Cafe type
           return {
+            // Primary required fields from Cafe interface
             id: Number(cafe.id) || 0,
-            Name: String(cafe.name || 'Unknown Cafe'),
-            title: String(cafe.name || 'Unknown Cafe'),
-            Description: [{ type: 'paragraph', children: [{ text: String(cafe.description || '') }] }],
+            created_at: cafe.created_at || new Date().toISOString(),
+            name: String(cafe.name || 'Unknown Cafe'),
             description: String(cafe.description || ''),
-            image: ensureFullImageUrl(cafe.image),
-            Location: {
+            location: {
               address: String(cafe.address || ''),
               city: String(cafe.city || ''),
               country: String(cafe.country || '')
             },
+            wifi: Boolean(cafe.wifi),
+            powerOutletAvailable: Boolean(cafe.power_outlet_available),
+            upvotes: Number(cafe.upvotes) || 0,
+            downvotes: Number(cafe.downvotes) || 0,
+            imageUrls: imageUrls,
+            
+            // Additional fields for backward compatibility
+            documentId: String(cafe.id || ''),
+            Name: String(cafe.name || 'Unknown Cafe'),
+            title: String(cafe.name || 'Unknown Cafe'),
+            image: mainImage,
+            // @ts-ignore - images property for CafeCard
+            images: imageUrls,
             hasWifi: Boolean(cafe.wifi),
-            hasPower: Boolean(cafe.power),
-            createdAt: String(cafe.created_at || new Date().toISOString()),
-            updatedAt: String(cafe.updated_at || new Date().toISOString())
+            hasPower: Boolean(cafe.power_outlet_available),
+            createdAt: cafe.created_at || new Date().toISOString(),
+            updatedAt: cafe.updated_at || new Date().toISOString(),
+            Description: [{ type: 'paragraph', children: [{ text: String(cafe.description || '') }] }]
           } as Cafe;
         } catch (err) {
           console.error('Error transforming cafe data:', err);
