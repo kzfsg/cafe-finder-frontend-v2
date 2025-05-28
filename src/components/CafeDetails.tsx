@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Cafe, Review } from '../data/cafes';
 import '../styles/CafeDetails.css';
 import UpvoteButton from './UpvoteButton';
+import DownvoteButton from './DownvoteButton';
 import reviewService, { type ReviewSubmission } from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -114,14 +115,24 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose }) => {
             <img src="/icons/map-pin.svg" alt="Location" className="button-icon" />
             View on Maps
           </button>
-          <UpvoteButton
-            cafeId={cafe.id}
-            upvotes={cafe.upvotes || 0}
-            onUpvote={(_, newUpvoteCount, updatedCafe) => {
-              // You could update the cafe state here if needed
-              console.log('Cafe upvoted to', newUpvoteCount, updatedCafe);
-            }}
-          />
+          <div className="vote-buttons">
+            <UpvoteButton
+              cafeId={cafe.id}
+              upvotes={cafe.upvotes || 0}
+              onUpvote={(_, newUpvoteCount, updatedCafe) => {
+                // You could update the cafe state here if needed
+                console.log('Cafe upvoted to', newUpvoteCount, updatedCafe);
+              }}
+            />
+            <DownvoteButton
+              cafeId={cafe.id}
+              downvotes={cafe.downvotes || 0}
+              onDownvote={(_, newDownvoteCount, updatedCafe) => {
+                // You could update the cafe state here if needed
+                console.log('Cafe downvoted to', newDownvoteCount, updatedCafe);
+              }}
+            />
+          </div>
         </div>
       </header>
 

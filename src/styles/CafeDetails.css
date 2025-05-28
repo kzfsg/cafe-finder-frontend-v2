@@ -66,6 +66,13 @@
   display: flex;
   gap: 12px;
   margin-top: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.vote-buttons {
+  display: flex;
+  gap: 8px;
 }
 
 .maps-button, .upvote-button {
