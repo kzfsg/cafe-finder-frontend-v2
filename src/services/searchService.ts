@@ -126,14 +126,15 @@ const searchService = {
       // Transform each cafe to our application format
       let transformedCafes = await Promise.all(cafesData.map((cafe: any) => transformCafeData(cafe)));
       
-      // Apply location-based filtering if nearMe is specified
+      // Calculate distances for all cafes if user location is provided
       if (filters?.nearMe) {
         const { latitude, longitude, radiusKm } = filters.nearMe;
         
-        transformedCafes = transformedCafes.filter((cafe: Cafe) => {
+        // First calculate distances for all cafes
+        transformedCafes = transformedCafes.map((cafe: Cafe) => {
           // Skip cafes without location data
           if (!cafe.location?.latitude || !cafe.location?.longitude) {
-            return false;
+            return cafe;
           }
           
           // Calculate distance between user and cafe
@@ -144,8 +145,21 @@ const searchService = {
             cafe.location.longitude
           );
           
-          return distance <= radiusKm;
+          // Add distance to cafe object
+          return { ...cafe, distance };
         });
+        
+        // Then filter by radius if needed
+        if (radiusKm > 0) {
+          transformedCafes = transformedCafes.filter((cafe: Cafe) => {
+            // Skip cafes without distance calculated
+            if (cafe.distance === undefined) {
+              return false;
+            }
+            
+            return cafe.distance <= radiusKm;
+          });
+        }
       }
       
       return transformedCafes;

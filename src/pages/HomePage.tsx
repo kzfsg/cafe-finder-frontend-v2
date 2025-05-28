@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Container, 
   Title, 
@@ -17,12 +17,30 @@ import CafeCard from '../components/CafeCard';
 import CafeDetails from '../components/CafeDetails';
 import type { Cafe } from '../data/cafes';
 import type { FilterOptions } from '../components/FilterDropdown';
-import { calculateDistance } from '../utils/geolocation';
+import { calculateDistance, getCurrentLocation } from '../utils/geolocation';
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<{latitude: number; longitude: number} | null>(null);
+  
+  // Get user location on component mount
+  useEffect(() => {
+    const getUserLocation = async () => {
+      try {
+        const position = await getCurrentLocation();
+        setUserLocation({
+          latitude: position.latitude,
+          longitude: position.longitude
+        });
+      } catch (error) {
+        // Silently fail if location access is denied
+      }
+    };
+    
+    getUserLocation();
+  }, []);
   
   // Extract search parameters from URL
   const query = searchParams.get('q') || '';
@@ -123,19 +141,37 @@ export default function HomePage() {
     );
   }
 
-  // Calculate distances if we have user location
+  // Calculate distances for all cafes if we have user location
   const cafesWithDistance = cafes.map(cafe => {
-    // Only calculate distance if we have user location and cafe location
-    if (filters.nearMe && cafe.location?.latitude && cafe.location?.longitude) {
-      const distance = calculateDistance(
-        filters.nearMe.latitude,
-        filters.nearMe.longitude,
-        cafe.location.latitude,
-        cafe.location.longitude
-      );
-      return { ...cafe, distance };
+    // Calculate distance if we have user location and cafe location
+    if (cafe.location?.latitude && cafe.location?.longitude) {
+      // Use filters.nearMe if available, otherwise use userLocation
+      const userCoords = filters.nearMe || userLocation;
+      
+      if (userCoords) {
+        const distance = calculateDistance(
+          userCoords.latitude,
+          userCoords.longitude,
+          cafe.location.latitude,
+          cafe.location.longitude
+        );
+        return { ...cafe, distance };
+      }
     }
     return cafe;
+  });
+  
+  // Sort cafes by distance (closest first)
+  const sortedCafes = [...cafesWithDistance].sort((a, b) => {
+    // If both have distance, sort by distance
+    if (a.distance !== undefined && b.distance !== undefined) {
+      return a.distance - b.distance;
+    }
+    // If only one has distance, prioritize the one with distance
+    if (a.distance !== undefined) return -1;
+    if (b.distance !== undefined) return 1;
+    // If neither has distance, maintain original order
+    return 0;
   });
 
   return (
@@ -153,7 +189,7 @@ export default function HomePage() {
             spacing="lg"
             style={{ marginTop: '2rem' }}
           >
-            {cafesWithDistance.map((cafe) => (
+            {sortedCafes.map((cafe) => (
               <CafeCard 
                 key={cafe.id}
                 id={cafe.id}
