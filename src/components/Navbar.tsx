@@ -5,8 +5,10 @@ import ProfileAvatar from './ProfileAvatar';
 import { useAuth } from '../context/AuthContext';
 import './../App.css';
 
+import type { FilterOptions } from './FilterDropdown';
+
 interface NavbarProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, filters?: FilterOptions) => void;
 }
 
 export default function Navbar({ onSearch }: NavbarProps) {

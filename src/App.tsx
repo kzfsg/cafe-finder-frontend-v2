@@ -30,11 +30,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
+import type { FilterOptions } from './components/FilterDropdown';
+
 // Main App component with providers
 function App() {
-  const handleSearch = (query: string) => {
+  const handleSearch = (query: string, filters?: FilterOptions) => {
     // Search functionality is handled in the HomePage component
     console.log('Search query in App:', query);
+    console.log('Search filters in App:', filters);
+    
+    // We're just logging the search parameters here since the actual search
+    // functionality is implemented in the HomePage component via React Query
   };
 
   return (

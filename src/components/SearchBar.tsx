@@ -1,36 +1,41 @@
 import React, { useState } from 'react';
 import './../App.css';
+import { Button } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
+import FilterDropdown, { type FilterOptions } from './FilterDropdown';
 
 interface SearchBarProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, filters?: FilterOptions) => void;
 }
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
   const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState<FilterOptions>({
+    location: '',
+    wifi: false,
+    powerOutlet: false,
+    seatingCapacity: null,
+    noiseLevel: null,
+    priceRange: null,
+    upvotes: null,
+    downvotes: null
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    onSearch(query, filters);
+  };
+
+  const handleFilterChange = (updatedFilters: FilterOptions) => {
+    setFilters(updatedFilters);
+    // Optionally trigger search immediately when filters change
+    // onSearch(query, updatedFilters);
   };
 
   return (
-    <form className="search-bar" onSubmit={handleSubmit}>
-      <div className="search-input-container">
-        <svg
-          className="search-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
+    <form className="search-bar" onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+      <div className="search-input-container" style={{ flex: 1, position: 'relative' }}>
+        <IconSearch size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
         <input
           type="text"
           value={query}
@@ -38,8 +43,15 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           placeholder="Search for cafes..."
           className="search-input"
           aria-label="Search"
+          style={{ paddingLeft: '32px' }}
         />
       </div>
+      
+      <FilterDropdown onFilterChange={handleFilterChange} />
+      
+      <Button type="submit" style={{ borderRadius: '4px', height: '36px' }}>
+        Search
+      </Button>
     </form>
   );
 }

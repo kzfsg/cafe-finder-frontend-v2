@@ -89,7 +89,7 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
 };
 
 // Transform Supabase cafe data to our application's Cafe format
-// Export this so it can be used by other services
+// Export this function so it can be used by other services
 export const transformCafeData = async (supaCafe: any): Promise<Cafe> => {
   try {
     console.log('Transforming Supabase cafe data:', supaCafe);
@@ -416,88 +416,8 @@ const cafeService = {
     }
   },
   
-  // Search cafes by query
-  searchCafes: async (query: string): Promise<Cafe[]> => {
-    try {
-      console.log(`Searching cafes for query: ${query}`);
-      
-      // Create a timeout promise to prevent hanging
-      const timeoutPromise = new Promise<{data: null, error: Error}>((resolve) => {
-        setTimeout(() => {
-          console.warn('Search query timed out after 10 seconds');
-          resolve({
-            data: null,
-            error: new Error(`Search query timeout for '${query}'`)
-          });
-        }, 10000); // 10 second timeout
-      });
-      
-      // Create the actual query promise
-      const queryPromise = supabase
-        .from(CAFES_TABLE)
-        .select('*')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%`);
-      
-      // Race the query against the timeout
-      const { data: cafesData, error } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]);
-      
-      if (error) {
-        console.error(`Search error for query '${query}':`, error);
-        return handleSupabaseError(error, `searchCafes-${query}`);
-      }
-      
-      if (!cafesData || cafesData.length === 0) {
-        console.log('No matching cafes found for query:', query);
-        return [];
-      }
-      
-      // Transform each cafe to our application format
-      return await Promise.all(cafesData.map(cafe => transformCafeData(cafe)));
-    } catch (error) {
-      console.error('Error searching cafes:', error);
-      return [];
-    }
-  },
-  
-  // Note: Upvote functionality has been moved to upvoteService.ts
-  
-  // Get upvoted cafes - this would require a separate table for user upvotes
-  // For now, we'll just return all cafes with upvotes > 0
-  getUpvotedCafes: async (): Promise<Cafe[]> => {
-    try {
-      console.log('Fetching upvoted cafes...');
-      const { data: cafesData, error } = await supabase
-        .from(CAFES_TABLE)
-        .select('*')
-        .gt('upvotes', 0)
-        .order('upvotes', { ascending: false });
-      
-      if (error) {
-        return handleSupabaseError(error, 'getUpvotedCafes');
-      }
-      
-      if (!cafesData || cafesData.length === 0) {
-        console.log('No upvoted cafes found');
-        return [];
-      }
-      
-      return await Promise.all(cafesData.map(cafe => transformCafeData(cafe)));
-    } catch (error) {
-      console.error('Error fetching upvoted cafes:', error);
-      return [];
-    }
-  },
-  
-  // Check if a cafe is upvoted - implemented in upvoteService
-  isCafeUpvoted: async (cafeId: number): Promise<boolean> => {
-    // This functionality is now implemented in upvoteService
-    // Importing it here would create a circular dependency
-    // This method is kept for API compatibility
-    return false;
+  // Search functionality has been moved to searchService.ts
   }
-};
+
 
 export default cafeService;
