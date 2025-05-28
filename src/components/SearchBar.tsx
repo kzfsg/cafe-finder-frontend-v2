@@ -28,9 +28,13 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   };
 
   const handleFilterChange = (updatedFilters: FilterOptions) => {
+    console.log(' Filters updated in SearchBar:', updatedFilters);
     setFilters(updatedFilters);
-    // Optionally trigger search immediately when filters change
-    // onSearch(query, updatedFilters);
+    // Trigger search immediately when location filters change
+    if (updatedFilters.nearMe) {
+      console.log(' Location filter changed, triggering search...');
+      onSearch(query, { ...updatedFilters });
+    }
   };
 
   return (

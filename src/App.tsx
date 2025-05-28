@@ -48,7 +48,16 @@ function App() {
     
     // Add filters to the URL parameters
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== null && value !== '' && value !== false) {
+      if (value === null || value === '' || value === false) return;
+      
+      // Handle nested nearMe object
+      if (key === 'nearMe' && value && typeof value === 'object') {
+        const nearMe = value as { latitude: number; longitude: number; radiusKm: number };
+        params.set('nearMe.latitude', nearMe.latitude.toString());
+        params.set('nearMe.longitude', nearMe.longitude.toString());
+        params.set('nearMe.radiusKm', nearMe.radiusKm.toString());
+      } else {
+        // Handle regular filters
         params.set(key, String(value));
       }
     });

@@ -16,7 +16,7 @@ import searchService from '../services/searchService';
 import CafeCard from '../components/CafeCard';
 import CafeDetails from '../components/CafeDetails';
 import type { Cafe } from '../data/cafes';
-import type { FilterOptions } from '../services/searchService';
+import type { FilterOptions } from '../components/FilterDropdown';
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
@@ -60,8 +60,18 @@ export default function HomePage() {
     noiseLevel,
     priceRange,
     upvotes,
-    downvotes
+    downvotes,
+    // Check for nearMe parameters
+    nearMe: searchParams.get('nearMe.latitude') && searchParams.get('nearMe.longitude') && searchParams.get('nearMe.radiusKm') 
+      ? {
+          latitude: Number(searchParams.get('nearMe.latitude')),
+          longitude: Number(searchParams.get('nearMe.longitude')),
+          radiusKm: Number(searchParams.get('nearMe.radiusKm'))
+        }
+      : null
   };
+  
+  console.log('🌍 Near Me filter:', filters.nearMe);
 
   // Determine if we should use search or get all cafes
   const hasSearchParams = query || Object.values(filters).some(value => 

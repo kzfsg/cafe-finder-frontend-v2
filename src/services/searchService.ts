@@ -1,6 +1,8 @@
 import { supabase } from '../supabase-client';
+import { calculateDistance } from '../utils/geolocation';
 import type { Cafe } from '../data/cafes';
 import { transformCafeData } from './cafeService';
+import type { FilterOptions } from '../components/FilterDropdown';
 
 // Supabase table name
 const CAFES_TABLE = 'cafes';
@@ -17,17 +19,8 @@ const handleSupabaseError = (error: any, context: string) => {
   return Promise.reject(error);
 };
 
-// Define the FilterOptions type
-export interface FilterOptions {
-  location?: string;
-  wifi?: boolean;
-  powerOutlet?: boolean;
-  seatingCapacity?: number | null;
-  noiseLevel?: string | null;
-  priceRange?: string | null;
-  upvotes?: number | null;
-  downvotes?: number | null;
-}
+// Using FilterOptions from the FilterDropdown component
+// This includes the nearMe property for location-based search
 
 const searchService = {
   // Search cafes by query and filters
@@ -55,10 +48,13 @@ const searchService = {
       // Apply filters if provided
       console.log('Applying filters:', filters);
       if (filters) {
-        // Location filter
-        if (filters.location && filters.location.trim() !== '') {
-          queryBuilder = queryBuilder.ilike('location', `%${filters.location}%`);
+        // Location filter (text-based)
+        if (filters.location && filters.location.trim() !== '' && !filters.nearMe) {
+          console.log('Applying location filter by name:', filters.location);
+          queryBuilder = queryBuilder.ilike('location->>city', `%${filters.location}%`);
         }
+        
+        // Note: nearMe filtering will be applied after fetching results
         
         // WiFi filter
         if (filters.wifi === true) {
@@ -143,7 +139,49 @@ const searchService = {
       
       // Transform each cafe to our application format
       console.log('Transforming cafe data...');
-      const transformedCafes = await Promise.all(cafesData.map(cafe => transformCafeData(cafe)));
+      let transformedCafes = await Promise.all(cafesData.map((cafe: any) => transformCafeData(cafe)));
+      
+      // Apply location-based filtering if nearMe is specified
+      if (filters?.nearMe) {
+        const { latitude, longitude, radiusKm } = filters.nearMe;
+        console.group('📍 Location-Based Filtering');
+        console.log(`🔍 Filtering cafes within ${radiusKm}km of (${latitude}, ${longitude})`);
+        
+        // Log user's current location
+        console.log('📍 Current location:', { latitude, longitude });
+        
+        transformedCafes = transformedCafes.filter((cafe: Cafe) => {
+          // Skip cafes without location data
+          if (!cafe.location?.latitude || !cafe.location?.longitude) {
+            console.log(`❌ Skipping cafe "${cafe.name}" - missing location data`);
+            return false;
+          }
+          
+          // Log cafe's location
+          console.log(`🏪 Cafe: ${cafe.name}`);
+          console.log(`   Location: (${cafe.location.latitude}, ${cafe.location.longitude})`);
+          
+          // Calculate distance between user and cafe
+          const distance = calculateDistance(
+            latitude,
+            longitude,
+            cafe.location.latitude,
+            cafe.location.longitude
+          );
+          
+          const isWithinRadius = distance <= radiusKm;
+          
+          // Log detailed distance information
+          console.log(`   Distance: ${distance.toFixed(2)}km`);
+          console.log(`   Within ${radiusKm}km radius: ${isWithinRadius ? '✅ Yes' : '❌ No'}`);
+          
+          return isWithinRadius;
+        });
+        
+        console.log(`\n📊 Results:`);
+        console.log(`   Total cafes: ${transformedCafes.length} within ${radiusKm}km`);
+        console.groupEnd();
+      }
       
       console.log('✅ Search completed successfully');
       console.groupEnd();

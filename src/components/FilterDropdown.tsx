@@ -7,9 +7,14 @@ import {
   NumberInput, 
   Select, 
   Group, 
-  Stack 
+  Stack,
+  Text,
+  Divider,
+  Loader,
+  SegmentedControl
 } from '@mantine/core';
-import { IconFilter } from '@tabler/icons-react';
+import { IconFilter, IconCurrentLocation, IconMapPin } from '@tabler/icons-react';
+import { getCurrentLocation } from '../utils/geolocation';
 
 export interface FilterOptions {
   location?: string;
@@ -20,6 +25,12 @@ export interface FilterOptions {
   priceRange?: string | null;
   upvotes?: number | null;
   downvotes?: number | null;
+  // Location-based search parameters
+  nearMe?: {
+    latitude: number;
+    longitude: number;
+    radiusKm: number; // Search radius in kilometers
+  } | null;
 }
 
 interface FilterDropdownProps {
@@ -36,12 +47,51 @@ export default function FilterDropdown({ onFilterChange }: FilterDropdownProps) 
     noiseLevel: null,
     priceRange: null,
     upvotes: null,
-    downvotes: null
+    downvotes: null,
+    nearMe: null
   });
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+    console.log('🔧 Filter changed:', { key, value });
     const updatedFilters = { ...filters, [key]: value };
+    console.log('📋 Updated filters:', updatedFilters);
     setFilters(updatedFilters);
+    onFilterChange(updatedFilters); // Make sure we're passing the update up
+  };
+
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const handleGetCurrentLocation = async () => {
+    try {
+      setIsLoadingLocation(true);
+      setLocationError(null);
+      
+      const position = await getCurrentLocation();
+      console.log('Got user location:', position);
+      
+      // Update filters with user's location and default 5km radius
+      const updatedFilters = { 
+        ...filters, 
+        location: '', // Clear text location when using geolocation
+        nearMe: {
+          latitude: position.latitude,
+          longitude: position.longitude,
+          radiusKm: 1 // Default radius (changed from 5 to 1)
+        }
+      };
+      
+      setFilters(updatedFilters);
+    } catch (error) {
+      console.error('Error getting location:', error);
+      setLocationError(error instanceof Error ? error.message : 'Failed to get your location');
+      
+      // Revert to name-based search if location fails
+      const updatedFilters = { ...filters, nearMe: null };
+      setFilters(updatedFilters);
+    } finally {
+      setIsLoadingLocation(false);
+    }
   };
 
   const clearFilters = () => {
@@ -53,7 +103,8 @@ export default function FilterDropdown({ onFilterChange }: FilterDropdownProps) 
       noiseLevel: null,
       priceRange: null,
       upvotes: null,
-      downvotes: null
+      downvotes: null,
+      nearMe: null
     };
     setFilters(emptyFilters);
     onFilterChange(emptyFilters);
@@ -90,12 +141,85 @@ export default function FilterDropdown({ onFilterChange }: FilterDropdownProps) 
 
       <Popover.Dropdown>
         <Stack gap="xs">
-          <TextInput
-            label="Location"
-            placeholder="Enter location"
-            value={filters.location || ''}
-            onChange={(e) => handleFilterChange('location', e.target.value)}
-          />
+          <div>
+            <Text fw={500} size="sm" mb={5}>Location Search</Text>
+            <SegmentedControl
+              data={[
+                { label: 'By Name', value: 'name' },
+                { label: 'Near Me', value: 'nearMe' }
+              ]}
+              value={filters.nearMe ? 'nearMe' : 'name'}
+              onChange={(value) => {
+                if (value === 'name') {
+                  // Switch to location name search
+                  const updatedFilters = { ...filters, nearMe: null };
+                  setFilters(updatedFilters);
+                } else if (value === 'nearMe') {
+                  // Try to get current location
+                  handleGetCurrentLocation();
+                }
+              }}
+              disabled={isLoadingLocation}
+              fullWidth
+              mb="xs"
+            />
+            
+            {isLoadingLocation && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0' }}>
+                <Loader size="xs" />
+                <Text size="sm">Getting your location...</Text>
+              </div>
+            )}
+            
+            {locationError && (
+              <Text color="red" size="xs" mb="xs">
+                {locationError}
+              </Text>
+            )}
+            
+            {!filters.nearMe ? (
+              // Location by name search
+              <TextInput
+                placeholder="Enter location name"
+                value={filters.location || ''}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+                leftSection={<IconMapPin size={16} />}
+                disabled={isLoadingLocation}
+              />
+            ) : (
+              // Near me search with radius options
+              <div>
+                <Select
+                  label="Search Radius"
+                  placeholder="Select radius"
+                  value={filters.nearMe?.radiusKm.toString() || '5'}
+                  onChange={(value) => {
+                    if (value && filters.nearMe) {
+                      handleFilterChange('nearMe', {
+                        ...filters.nearMe,
+                        radiusKm: parseInt(value, 10)
+                      });
+                    }
+                  }}
+                  data={[
+                    { value: '0.5', label: '0.5km radius' },
+                    { value: '1', label: '1km radius' },
+                    { value: '3', label: '3km radius' },
+                    { value: '5', label: '5km radius' },
+                    { value: '10', label: '10km radius' },
+                    { value: '15', label: '15km radius' },
+                    { value: '25', label: '25km+ radius' }
+                  ]}
+                  leftSection={<IconCurrentLocation size={16} />}
+                />
+                <Text size="xs" color="dimmed" mt={5}>
+                  Using your location: {filters.nearMe.latitude.toFixed(6)}, {filters.nearMe.longitude.toFixed(6)}
+                </Text>
+              </div>
+            )}
+          </div>
+          
+          <Divider my="sm" />
           
           <Checkbox
             label="WiFi Available"
