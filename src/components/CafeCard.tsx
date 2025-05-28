@@ -16,11 +16,12 @@ interface CafeCardProps {
   wifi?: boolean; // New Supabase field
   powerOutletAvailable?: boolean; // New Supabase field
   upvotes?: number;
+  distance?: number; // Distance from user in kilometers
   onUpvote?: (id: number, newUpvotes: number, cafe: Cafe) => void;
   onClick?: () => void;
 }
 
-export default function CafeCard({ id = 0, title, name, image, images = [], description, hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, onUpvote, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, title, name, image, images = [], description, hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, distance, onUpvote, onClick }: CafeCardProps) {
   // Use name as title if title is not provided (for Supabase compatibility)
   const displayTitle = title || name || 'Unnamed Cafe';
   // No need for upvote state management here - moved to UpvoteButton component
@@ -131,6 +132,12 @@ export default function CafeCard({ id = 0, title, name, image, images = [], desc
             />
           </div>
         </div>
+        {distance !== undefined && (
+          <div className="cafe-distance">
+            <img src="/icons/location.svg" alt="Distance" className="distance-icon" />
+            <span>{distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`} away</span>
+          </div>
+        )}
         <p className="cafe-description">
           {typeof description === 'string' 
             ? description.length > 120 

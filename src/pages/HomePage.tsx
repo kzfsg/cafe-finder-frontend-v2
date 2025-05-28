@@ -17,30 +17,15 @@ import CafeCard from '../components/CafeCard';
 import CafeDetails from '../components/CafeDetails';
 import type { Cafe } from '../data/cafes';
 import type { FilterOptions } from '../components/FilterDropdown';
+import { calculateDistance } from '../utils/geolocation';
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   
-  // Log initial render and search params
-  console.group('🏠 HomePage Render');
-  console.log('🔍 Initial URL Search Params:', Object.fromEntries(searchParams.entries()));
-
   // Extract search parameters from URL
   const query = searchParams.get('q') || '';
-  
-  console.log('📋 Extracted search parameters:', {
-    query,
-    location: searchParams.get('location') || 'N/A',
-    wifi: searchParams.get('wifi') || 'false',
-    powerOutlet: searchParams.get('powerOutlet') || 'false',
-    seatingCapacity: searchParams.get('seatingCapacity') || 'N/A',
-    noiseLevel: searchParams.get('noiseLevel') || 'N/A',
-    priceRange: searchParams.get('priceRange') || 'N/A',
-    upvotes: searchParams.get('upvotes') || 'N/A',
-    downvotes: searchParams.get('downvotes') || 'N/A'
-  });
   const location = searchParams.get('location') || '';
   const wifi = searchParams.get('wifi') === 'true';
   const powerOutlet = searchParams.get('powerOutlet') === 'true';
@@ -51,7 +36,6 @@ export default function HomePage() {
   const downvotes = searchParams.get('downvotes') ? Number(searchParams.get('downvotes')) : null;
 
   // Create filters object from URL parameters
-  console.log('🔄 Creating filters object');
   const filters: FilterOptions = {
     location,
     wifi,
@@ -70,18 +54,10 @@ export default function HomePage() {
         }
       : null
   };
-  
-  console.log('🌍 Near Me filter:', filters.nearMe);
 
   // Determine if we should use search or get all cafes
   const hasSearchParams = query || Object.values(filters).some(value => 
     value !== '' && value !== false && value !== null
-  );
-  
-  console.log('🔍 Search mode:', hasSearchParams ? 'SEARCH' : 'GET ALL');
-  console.log('Active filters:', Object.entries(filters)
-    .filter(([_, value]) => value !== null && value !== '' && value !== false)
-    .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
   );
 
   // Fetch cafes using React Query - use search if parameters exist, otherwise get all
@@ -90,18 +66,11 @@ export default function HomePage() {
     queryFn: async () => {
       try {
         if (hasSearchParams) {
-          console.log('🔍 Executing search with:', { query, filters });
-          const results = await searchService.searchCafes(query, filters);
-          console.log('✅ Search results:', results);
-          return results;
+          return await searchService.searchCafes(query, filters);
         } else {
-          console.log('📚 Fetching all cafes');
-          const results = await cafeService.getAllCafes();
-          console.log('✅ All cafes:', results);
-          return results;
+          return await cafeService.getAllCafes();
         }
       } catch (error) {
-        console.error('❌ Error in queryFn:', error);
         throw error;
       }
     },
@@ -109,7 +78,6 @@ export default function HomePage() {
 
   // Handle opening the cafe details modal
   const handleCafeClick = (cafe: Cafe) => {
-    console.log('👆 Cafe clicked:', { id: cafe.id, name: cafe.name || 'Unnamed' });
     setSelectedCafe(cafe);
     setDetailsModalOpen(true);
   };
@@ -122,7 +90,6 @@ export default function HomePage() {
   };
 
   if (isLoading) {
-    console.log('⏳ Loading cafes...');
     return (
       <Container size="lg" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
         <Loader size="xl" type="dots" /> 
@@ -131,7 +98,6 @@ export default function HomePage() {
   }
 
   if (error) {
-    console.error('❌ Error loading cafes:', error);
     return (
       <Container size="lg" py="xl">
         <Text c="red" size="lg" fw={500} mb="md">
@@ -145,7 +111,6 @@ export default function HomePage() {
 
   // Show no results message if search was performed but no cafes found
   if (hasSearchParams && cafes.length === 0) {
-    console.log('❌ No cafes found matching search criteria');
     return (
       <Container size="lg" py="xl">
         <Text size="lg" mb="md">
@@ -158,40 +123,54 @@ export default function HomePage() {
     );
   }
 
-  console.log('✅ Displaying cafes:', cafes.length > 0 ? `Found ${cafes.length} cafes` : 'No cafes to display');
+  // Calculate distances if we have user location
+  const cafesWithDistance = cafes.map(cafe => {
+    // Only calculate distance if we have user location and cafe location
+    if (filters.nearMe && cafe.location?.latitude && cafe.location?.longitude) {
+      const distance = calculateDistance(
+        filters.nearMe.latitude,
+        filters.nearMe.longitude,
+        cafe.location.latitude,
+        cafe.location.longitude
+      );
+      return { ...cafe, distance };
+    }
+    return cafe;
+  });
+
   return (
     <>
       <Container size="lg" py="xl">
-        <Title order={1} mb="xl">Find Your Perfect Cafe</Title>
+        <Title order={1} mb="lg" className="tryst" ta="center">Nomadic</Title>
+        <Text size="lg" mb="xl" className="nunitoItalic" ta="center" c="dimmed">
+          Find your perfect workspace
+        </Text>
         
         {/* Cafe Grid */}
-        {cafes.length > 0 ? (
+        {cafesWithDistance.length > 0 ? (
           <SimpleGrid
             cols={{ base: 1, sm: 2, md: 3, lg: 3 }}
             spacing="lg"
-            verticalSpacing="lg"
+            style={{ marginTop: '2rem' }}
           >
-            {cafes.map((cafe) => (
+            {cafesWithDistance.map((cafe) => (
               <CafeCard 
                 key={cafe.id}
                 id={cafe.id}
-                title={cafe.title || cafe.name || 'Unnamed Cafe'}
-                description={cafe.description || 'No description available'}
-                image={cafe.imageUrls?.[0] || ''} // main image
-                images={cafe.imageUrls || []}
+                title={cafe.name}
+                image={cafe.image}
+                description={cafe.description}
                 hasWifi={cafe.wifi || false}
                 hasPower={cafe.powerOutletAvailable || false}
                 upvotes={cafe.upvotes || 0}
+                distance={cafe.distance}
                 onClick={() => handleCafeClick(cafe)}
               />
             ))}
           </SimpleGrid>
         ) : (
-          <Box py="xl" style={{ textAlign: 'center' }}>
-            <Text size="lg" mb="md">No cafes found</Text>
-            <Text c="dimmed">
-              There are no cafes available at the moment.
-            </Text>
+          <Box style={{ textAlign: 'center', padding: '2rem' }}>
+            <Text size="lg">No cafes found.</Text>
           </Box>
         )}
       </Container>

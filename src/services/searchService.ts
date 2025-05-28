@@ -99,14 +99,9 @@ const searchService = {
         }
       }
       
-      // Log the final query builder state
-      console.log('Final query builder:', queryBuilder);
-      
       // Create a timeout promise to prevent hanging
-      console.log('Creating query with 10s timeout');
       const timeoutPromise = new Promise<{data: null, error: Error}>((resolve) => {
         setTimeout(() => {
-          console.warn('Search query timed out after 10 seconds');
           resolve({
             data: null,
             error: new Error(`Search query timeout for '${query}'`)
@@ -115,51 +110,31 @@ const searchService = {
       });
       
       // Race the query against the timeout
-      console.log('Executing query...');
       const { data: cafesData, error } = await Promise.race([
         queryBuilder,
         timeoutPromise
       ]);
       
-      console.log('Query completed', { hasData: !!cafesData, error });
-      
       if (error) {
-        console.error(`❌ Search error for query '${query}':`, error);
-        console.groupEnd();
         return handleSupabaseError(error, `searchCafes-${query}`);
       }
       
       if (!cafesData || cafesData.length === 0) {
-        console.log(`🔍 No matching cafes found for query: ${query}`);
-        console.groupEnd();
         return [];
       }
       
-      console.log(`✅ Found ${cafesData.length} cafes matching search criteria`);
-      
       // Transform each cafe to our application format
-      console.log('Transforming cafe data...');
       let transformedCafes = await Promise.all(cafesData.map((cafe: any) => transformCafeData(cafe)));
       
       // Apply location-based filtering if nearMe is specified
       if (filters?.nearMe) {
         const { latitude, longitude, radiusKm } = filters.nearMe;
-        console.group('📍 Location-Based Filtering');
-        console.log(`🔍 Filtering cafes within ${radiusKm}km of (${latitude}, ${longitude})`);
-        
-        // Log user's current location
-        console.log('📍 Current location:', { latitude, longitude });
         
         transformedCafes = transformedCafes.filter((cafe: Cafe) => {
           // Skip cafes without location data
           if (!cafe.location?.latitude || !cafe.location?.longitude) {
-            console.log(`❌ Skipping cafe "${cafe.name}" - missing location data`);
             return false;
           }
-          
-          // Log cafe's location
-          console.log(`🏪 Cafe: ${cafe.name}`);
-          console.log(`   Location: (${cafe.location.latitude}, ${cafe.location.longitude})`);
           
           // Calculate distance between user and cafe
           const distance = calculateDistance(
@@ -169,27 +144,13 @@ const searchService = {
             cafe.location.longitude
           );
           
-          const isWithinRadius = distance <= radiusKm;
-          
-          // Log detailed distance information
-          console.log(`   Distance: ${distance.toFixed(2)}km`);
-          console.log(`   Within ${radiusKm}km radius: ${isWithinRadius ? '✅ Yes' : '❌ No'}`);
-          
-          return isWithinRadius;
+          return distance <= radiusKm;
         });
-        
-        console.log(`\n📊 Results:`);
-        console.log(`   Total cafes: ${transformedCafes.length} within ${radiusKm}km`);
-        console.groupEnd();
       }
       
-      console.log('✅ Search completed successfully');
-      console.groupEnd();
       return transformedCafes;
     } catch (error) {
-      console.error('❌ Error in searchCafes:', error);
-      console.groupEnd();
-      return [];
+      throw error;
     }
   },
 };

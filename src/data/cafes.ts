@@ -31,6 +31,7 @@ export interface Cafe {
   priceRange?: string;
   upvotes: number;
   downvotes: number;
+  distance?: number; // Distance from user in kilometers
   
   // Legacy fields for backward compatibility
   imageUrls: string[]; // Array of image URLs for the cafe
