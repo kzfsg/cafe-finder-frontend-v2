@@ -136,12 +136,12 @@ const getAllCafeIdsWithLocation = async (
       return [];
     }
     
-    // Calculate distance for each cafe and sort by distance
+    // Calculate distance for each cafe, filter by radius if specified, and sort by distance
     const cafesWithDistance = data
       .map((cafe: any) => {
         // Skip cafes without location data
         if (!cafe.location?.latitude || !cafe.location?.longitude) {
-          return { id: cafe.id, distance: Infinity };
+          return null;
         }
         
         // Calculate distance between user and cafe
@@ -153,6 +153,13 @@ const getAllCafeIdsWithLocation = async (
         );
         
         return { id: cafe.id, distance };
+      })
+      // Filter out null entries (cafes without location data)
+      .filter((cafe): cafe is { id: number; distance: number } => cafe !== null)
+      // Filter by radius if specified in filters
+      .filter(cafe => {
+        if (!filters?.nearMe?.radiusKm) return true;
+        return cafe.distance <= filters.nearMe.radiusKm;
       })
       .sort((a, b) => a.distance - b.distance);
     
