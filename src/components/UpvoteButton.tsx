@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import upvoteService from '../services/upvoteService';
+import authService from '../services/authService';
 import type { Cafe } from '../data/cafes';
 import '../styles/UpvoteButton.css';
 
@@ -14,6 +16,7 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
   upvotes = 0, 
   onUpvote 
 }) => {
+  const navigate = useNavigate();
   const [isUpvoted, setIsUpvoted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(upvotes);
@@ -37,7 +40,22 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
   // Update local upvote count when prop changes
   useEffect(() => {
     setUpvoteCount(upvotes);
-  }, [upvotes]);
+    
+    // Re-check upvote status when upvotes count changes
+    // This ensures the button state stays in sync
+    const refreshUpvoteStatus = async () => {
+      if (cafeId) {
+        try {
+          const upvoted = await upvoteService.isCafeUpvoted(cafeId);
+          setIsUpvoted(upvoted);
+        } catch (error) {
+          console.error('Error refreshing upvote status:', error);
+        }
+      }
+    };
+    
+    refreshUpvoteStatus();
+  }, [upvotes, cafeId]);
 
   const handleToggleUpvote = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent element click
@@ -45,6 +63,14 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
     // Don't allow upvoting if already in progress or no cafeId
     if (isLoading || !cafeId) {
       console.log('Upvote aborted: loading =', isLoading, 'cafeId =', cafeId);
+      return;
+    }
+    
+    // Check if user is logged in
+    const isLoggedIn = await authService.isLoggedIn();
+    if (!isLoggedIn) {
+      // Redirect to login page with return URL
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
     

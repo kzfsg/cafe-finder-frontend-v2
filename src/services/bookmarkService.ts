@@ -65,15 +65,6 @@ const bookmarkService = {
             
             // Use the same transformation function as cafeService for consistency
             const transformedCafe = await transformCafeData(cafeData);
-            
-            // Ensure the images property is explicitly set for the CafeCard component
-            // This is crucial for the auto-scroll gallery feature to work
-            if (!transformedCafe.images && transformedCafe.imageUrls) {
-              // @ts-ignore - Add images property for CafeCard
-              transformedCafe.images = transformedCafe.imageUrls;
-              console.log(`Added ${transformedCafe.imageUrls.length} images to cafe ${transformedCafe.id}`);
-            }
-            
             console.log(`Transformed cafe ${transformedCafe.id} successfully`);
             return transformedCafe;
           } catch (err) {

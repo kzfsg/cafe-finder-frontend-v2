@@ -102,7 +102,9 @@ export default function HomePage() {
   
   // Handle upvote/downvote updates to keep state in sync between card and details view
   const handleVoteUpdate = (cafeId: number, updatedCafe: Cafe) => {
-    // Update the cafe in the list
+    console.log('Vote update received for cafe:', cafeId);
+    
+    // Update the cafe in the list with the new data
     const updatedCafes = cafes.map(cafe => 
       cafe.id === cafeId ? { ...cafe, ...updatedCafe } : cafe
     );
@@ -111,6 +113,10 @@ export default function HomePage() {
     if (selectedCafe && selectedCafe.id === cafeId) {
       setSelectedCafe({ ...selectedCafe, ...updatedCafe });
     }
+    
+    // Trigger a refetch to ensure data consistency with the backend
+    // This is important to keep vote counts and status in sync
+    setTimeout(() => refetch(), 300);
   };
 
   // Handle closing the cafe details modal

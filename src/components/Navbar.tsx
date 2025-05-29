@@ -2,6 +2,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import ProfileAvatar from './ProfileAvatar';
+import UserDropdown from './UserDropdown';
 import { useAuth } from '../context/AuthContext';
 import './../App.css';
 
@@ -47,21 +48,11 @@ export default function Navbar({ onSearch }: NavbarProps) {
         </Link>
         
         {user ? (
-          <div className="user-menu-container">
-            <button className="icon-button profile-button" aria-label="User profile">
-              <img 
-                src={user.avatar?.url || "/icons/default-avatar.svg"} 
-                alt={user.username} 
-                className="profile-image"
-              />
-            </button>
-            <div className="user-dropdown">
-              <span className="user-greeting">Hi, {user.username}</span>
-              <Link to="/profile" className="dropdown-item">Profile</Link>
-              <Link to="/saved" className="dropdown-item">Saved Cafes</Link>
-              <button onClick={handleLogout} className="dropdown-item logout">Log Out</button>
-            </div>
-          </div>
+          <UserDropdown 
+            username={user.username}
+            avatarUrl={user.avatar?.url}
+            onLogout={handleLogout}
+          />
         ) : (
           <div className="auth-buttons">
             <Link to="/login" className="auth-nav-button login-button">Log In</Link>

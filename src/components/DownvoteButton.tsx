@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import downvoteService from '../services/downvoteService';
+import authService from '../services/authService';
 import type { Cafe } from '../data/cafes';
 import '../styles/DownvoteButton.css';
 
@@ -14,6 +16,7 @@ const DownvoteButton: React.FC<DownvoteButtonProps> = ({
   downvotes = 0, 
   onDownvote 
 }) => {
+  const navigate = useNavigate();
   const [isDownvoted, setIsDownvoted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [downvoteCount, setDownvoteCount] = useState(downvotes);
@@ -37,7 +40,22 @@ const DownvoteButton: React.FC<DownvoteButtonProps> = ({
   // Update local downvote count when prop changes
   useEffect(() => {
     setDownvoteCount(downvotes);
-  }, [downvotes]);
+    
+    // Re-check downvote status when downvotes count changes
+    // This ensures the button state stays in sync
+    const refreshDownvoteStatus = async () => {
+      if (cafeId) {
+        try {
+          const downvoted = await downvoteService.isCafeDownvoted(cafeId);
+          setIsDownvoted(downvoted);
+        } catch (error) {
+          console.error('Error refreshing downvote status:', error);
+        }
+      }
+    };
+    
+    refreshDownvoteStatus();
+  }, [downvotes, cafeId]);
 
   const handleToggleDownvote = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent element click
@@ -45,6 +63,14 @@ const DownvoteButton: React.FC<DownvoteButtonProps> = ({
     // Don't allow downvoting if already in progress or no cafeId
     if (isLoading || !cafeId) {
       console.log('Downvote aborted: loading =', isLoading, 'cafeId =', cafeId);
+      return;
+    }
+    
+    // Check if user is logged in
+    const isLoggedIn = await authService.isLoggedIn();
+    if (!isLoggedIn) {
+      // Redirect to login page with return URL
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
     

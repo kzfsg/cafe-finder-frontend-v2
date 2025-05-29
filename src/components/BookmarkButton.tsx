@@ -59,7 +59,7 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
       console.log('Toggle result:', result);
       
       // Update the UI state
-      setIsBookmarked(result.bookmarked);
+      (result.bookmarked);
       
       // Show a visual feedback (could add a toast notification here)
       console.log(result.message);
