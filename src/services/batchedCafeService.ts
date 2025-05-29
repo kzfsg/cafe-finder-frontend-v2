@@ -74,10 +74,15 @@ const getAllCafeIdsWithLocation = async (
     // Start with a base query
     let queryBuilder = supabase
       .from(CAFES_TABLE)
-      .select('id, location');
+      .select('*');  // Select all fields to support text search and filtering
     
     // Apply filters if provided
     if (filters) {
+      // Location filter (text-based)
+      if (filters.location && filters.location.trim() !== '' && !filters.nearMe) {
+        console.log('Applying location filter by name:', filters.location);
+        queryBuilder = queryBuilder.ilike('location->>city', `%${filters.location}%`);
+      }
       // WiFi filter
       if (filters.wifi === true) {
         queryBuilder = queryBuilder.eq('wifi', true);

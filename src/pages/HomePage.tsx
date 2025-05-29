@@ -83,7 +83,7 @@ export default function HomePage() {
     value !== '' && value !== false && value !== null
   );
 
-  // Fetch cafes using React Query - use search if parameters exist, otherwise use batched loading
+  // Fetch cafes using React Query with batched loading for all cases
   const { isLoading, error, refetch } = useQuery<Cafe[]>({
     queryKey: ['cafes-initial', query, filters, userLocation],
     queryFn: async () => {
@@ -92,19 +92,15 @@ export default function HomePage() {
           return []; // Return empty array instead of undefined
         }
         
-        let cafes: Cafe[] = [];
-        
+        // Clear the cache when search parameters change to ensure fresh results
         if (hasSearchParams) {
-          // For search queries, we still load all results at once
-          cafes = await searchService.searchCafes(query, filters);
-          setDisplayedCafes(cafes);
-          setHasMoreCafes(false); // No infinite scrolling for search results
-        } else {
-          // For normal browsing, use batched loading
-          cafes = await batchedCafeService.loadInitialBatch(userLocation, batchSize, filters);
-          setDisplayedCafes(cafes);
-          setHasMoreCafes(cafes.length === batchSize); // If we got a full batch, there might be more
+          batchedCafeService.clearCache();
         }
+        
+        // Use batched loading for both search and regular browsing
+        const cafes = await batchedCafeService.loadInitialBatch(userLocation, batchSize, filters);
+        setDisplayedCafes(cafes);
+        setHasMoreCafes(cafes.length === batchSize); // If we got a full batch, there might be more
         
         return cafes; // Always return the cafes array
       } catch (error) {
@@ -123,7 +119,7 @@ export default function HomePage() {
   
   // Load more cafes when user scrolls
   const loadMoreCafes = useCallback(async () => {
-    if (!userLocation || isLoadingMore || !hasMoreCafes || hasSearchParams) {
+    if (!userLocation || isLoadingMore || !hasMoreCafes) {
       return;
     }
     
