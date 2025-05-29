@@ -383,11 +383,38 @@ body {
 /* Search button styles removed */
 
 /* Masonry Grid Styles */
-.masonry-grid {
-  column-count: 3;
-  column-gap: 20px;
+.masonry-container {
+  display: flex;
   width: 100%;
+  gap: 20px;
   margin-top: 30px;
+}
+
+.masonry-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 20px;
+}
+
+.masonry-item {
+  width: 100%;
+  margin-bottom: 0;
+  break-inside: avoid;
+}
+
+.masonry-item {
+  margin-bottom: 20px;
+}
+
+.masonry-item .cafe-gallery {
+  height: auto;
+  padding-bottom: 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Cafe card animation */
@@ -396,24 +423,17 @@ body {
   animation: fadeInFromTop 1s ease-in-out forwards;
 }
 
-/* First row of cards math for selecting rows */
-.cafe-card:nth-child(-n+3) {
+/* Animation delays for different columns */
+.masonry-column:nth-child(1) .cafe-card {
+  animation-delay: 0.3s;
+}
+
+.masonry-column:nth-child(2) .cafe-card {
   animation-delay: 0.5s;
 }
 
-/* Second row of cards */
-.cafe-card:nth-child(n+4):nth-child(-n+6) {
+.masonry-column:nth-child(3) .cafe-card {
   animation-delay: 0.7s;
-}
-
-/* Third row of cards */
-.cafe-card:nth-child(n+7):nth-child(-n+9) {
-  animation-delay: 0.9s;
-}
-
-/* Fourth row and beyond */
-.cafe-card:nth-child(n+10) {
-  animation-delay: 1.1s;
 }
 
 /* Animation for top-to-bottom effect */
@@ -422,15 +442,24 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Responsive adjustments */
 @media (max-width: 900px) {
-  .masonry-grid {
-    column-count: 2;
+  .masonry-container {
+    display: flex;
+  }
+  
+  .masonry-column:nth-child(3) {
+    display: none;
   }
 }
 
 @media (max-width: 600px) {
-  .masonry-grid {
-    column-count: 1;
+  .masonry-container {
+    flex-direction: column;
+  }
+  
+  .masonry-column:nth-child(2) {
+    display: none;
   }
 }
 
@@ -542,9 +571,8 @@ h3.cafe-title {
 .cafe-gallery {
   position: relative;
   width: 100%;
-  height: 0;
-  padding-bottom: 66.67%; /* 3:2 aspect ratio */
   overflow: hidden;
+  flex: 1;
 }
 
 .cafe-image {
@@ -557,6 +585,8 @@ h3.cafe-title {
   transition: opacity 0.5s ease, transform 0.5s ease;
   opacity: 0;
   z-index: 0;
+  aspect-ratio: auto;
+  min-height: 200px;
 }
 
 .cafe-image.active {

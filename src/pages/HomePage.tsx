@@ -5,7 +5,6 @@ import {
   Text, 
   Loader, 
   Box,
-  SimpleGrid,
   Modal,
   Button
 } from '@mantine/core';
@@ -15,6 +14,7 @@ import searchService from '../services/searchService';
 import batchedCafeService from '../services/batchedCafeService';
 import CafeCard from '../components/CafeCard';
 import CafeDetails from '../components/CafeDetails';
+import MasonryGrid from '../components/MasonryGrid';
 import type { Cafe } from '../data/cafes';
 import type { FilterOptions } from '../components/FilterDropdown';
 import { getCurrentLocation } from '../utils/geolocation';
@@ -259,14 +259,10 @@ export default function HomePage() {
           Find your perfect workspace
         </Text> */}
         
-        {/* Cafe Grid */}
+        {/* Masonry Grid */}
         {displayedCafes.length > 0 ? (
           <>
-            <SimpleGrid
-              cols={{ base: 1, sm: 2, md: 3, lg: 3 }}
-              spacing="lg"
-              style={{ marginTop: '2rem' }}
-            >
+            <MasonryGrid columns={3}>
               {displayedCafes.map((cafe) => (
                 <CafeCard 
                   key={cafe.id}
@@ -284,7 +280,7 @@ export default function HomePage() {
                   onDownvote={(_, __, updatedCafe) => handleVoteUpdate(cafe.id, updatedCafe)}
                 />
               ))}
-            </SimpleGrid>
+            </MasonryGrid>
             
             {/* Infinite scroll loader */}
             <div 

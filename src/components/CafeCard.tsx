@@ -78,7 +78,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
       }}
       onClick={onClick}
     >
-      <div className="cafe-gallery">
+      <div className="cafe-gallery" style={{ position: 'relative' }}>
         {uniqueImages.map((img, index) => (
           <img 
             key={index}
@@ -89,6 +89,13 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
             onError={(e) => {
               // If image fails to load, replace with default
               (e.target as HTMLImageElement).src = defaultImage;
+            }}
+            style={{ 
+              display: index === currentImageIndex ? 'block' : 'none',
+              width: '100%',
+              height: 'auto',
+              position: 'relative',
+              objectFit: 'contain'
             }}
           />
         ))}
