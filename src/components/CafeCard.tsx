@@ -118,10 +118,15 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
           </div>
         </div>
         
-        {/* Bottom overlay with title and amenities */}
+        {/* Bottom overlay with title */}
         <div className="cafe-overlay">
-          {/* Cafe title */}
           <h3 className="cafe-title">{displayTitle}</h3>
+        </div>
+        
+        {/* Bookmark and Amenities Container */}
+        <div className="bookmark-amenities-container">
+          {/* Bookmark button */}
+          <BookmarkButton cafeId={id} />
           
           {/* Amenities */}
           <div className="cafe-meta">
@@ -141,9 +146,6 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
             </div>
           </div>
         </div>
-        
-        {/* Bookmark button */}
-        <BookmarkButton cafeId={id} />
         
         {/* Gallery indicators */}
         {uniqueImages.length > 1 && (

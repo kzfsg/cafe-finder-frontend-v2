@@ -256,6 +256,7 @@
   margin: 0 auto;
   width: 100%;
 }
+
 /* headings */
 h1, h2, h3, h4, h5, h6 {
   color: black;
@@ -507,18 +508,17 @@ body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
+.cafe-card .cafe-title,
 .cafe-overlay .cafe-title,
-.cafe-overlay h3.cafe-title,
-.cafe-card .cafe-overlay .cafe-title {
-  font-size: 1.4rem; /* Increased from 1.1rem */
-  font-weight: 700; /* Made bolder */
-  margin: 0 0 10px 0; /* Added bottom margin */
+h3.cafe-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
   color: white !important;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
   position: relative;
   z-index: 3;
-  text-shadow: 0 3px 9px rgba(0, 0, 0, 0.8);
 }
-
 
 /* Overlay effect on hover */
 .cafe-card::after {
@@ -612,11 +612,19 @@ body {
 }
 
 /* Bookmark button */
-.bookmark-button {
+.bookmark-amenities-container {
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+  align-items: center;
+}
+
+.bookmark-button {
+  background-color: rgba(255, 255, 255, 0.9);
   border: none;
   border-radius: 50%;
   width: 36px;
@@ -625,9 +633,100 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 5;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.bookmark-button:hover {
+  background-color: white;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bookmark-button.bookmarked {
+  background-color: rgba(255, 87, 34, 0.2) !important;
+}
+
+/* Bookmark button loading spinner */
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 87, 34, 0.2);
+  border-radius: 50%;
+  border-top-color: #FF5722;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Cafe meta */
+.cafe-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 20px;
+  padding: 6px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+}
+
+/* Amenity icons */
+.cafe-amenities {
+  display: flex;
+  gap: 6px;
+}
+
+.amenity {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;  background: rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.amenity.available {
+  background: rgb(253, 253, 253);
+}
+
+.amenity.wifi.available {
+  background: rgb(255, 255, 255);
+}
+
+.amenity.power.available {
+  background: rgb(255, 255, 255);
+}
+
+.amenity-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: brightness(0);
+  transition: all 0.2s ease;
+}
+
+.amenity.available .amenity-icon {
+  filter: brightness(0);
+}
+
+.amenity:hover {
+  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.amenity.available:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.amenity.wifi.available:hover {
+  background: rgba(33, 150, 243, 0.3);
+}
+
+.amenity.power.available:hover {
+  background: rgba(76, 175, 80, 0.3);
 }
 
 /* Vote buttons in cafe card */
@@ -728,26 +827,6 @@ body {
   background-color: #f5f5f5;
   border-radius: 8px;
   margin: 2rem 0;
-}
-
-.bookmark-button:hover {
-  background-color: white;
-  transform: scale(1.1);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-}
-
-.bookmark-button.bookmarked {
-  background-color: rgba(255, 87, 34, 0.2) !important;
-}
-
-/* Bookmark button loading spinner */
-.button-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 87, 34, 0.2);
-  border-radius: 50%;
-  border-top-color: #FF5722;
-  animation: spin 0.8s linear infinite;
 }
 
 /* Masonry Grid Layout */
