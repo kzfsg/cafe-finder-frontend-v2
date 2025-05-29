@@ -74,43 +74,40 @@ export default function ProfilePage() {
       
       <div className="bento-grid">
         {/* User Profile Card */}
-        <Paper withBorder p="md" radius="md" className="bento-card" style={{ height: '100%' }}>
-          <Stack gap="md" style={{ height: '100%' }}>
-            <Group wrap="nowrap" align="flex-start" gap="md">
-              <Avatar 
-                src={user?.avatar || '/images/default-avatar.svg'}
-                size={100}
-                radius={100}
-                alt={user?.name || 'User'}
-              />
-              <Stack gap={4} style={{ flex: 1 }}>
-                <Title order={3} size="h4">{user?.name || 'User'}</Title>
-                <Text size="sm" color="dimmed">UX Designer</Text>
-                
-                <Group gap ="xl" mt="sm">
-                  <div style={{ textAlign: 'center' }}>
-                    <Text fw={700} size="lg">{reviewCount}</Text>
-                    <Text size="xs" color="dimmed">Reviews</Text>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <Text fw={700} size="lg">8</Text>
-                    <Text size="xs" color="dimmed">Cafes</Text>
-                  </div>
-                </Group>
-              </Stack>
-            </Group>
-            
-            <div style={{ marginTop: 'auto' }}>
-              <Group position="apart" mb={4}>
-                <Text size="sm" fw={500}>Level 7: Cafe Aficionado</Text>
-                <Text size="sm" color="dimmed">75%</Text>
-              </Group>
-              <div style={{ height: 8, backgroundColor: '#f1f3f5', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ width: '75%', height: '100%', backgroundColor: '#228be6' }} />
+        <div className="bento-card profile-card">
+          <div className="profile-header">
+            <Avatar
+              src={user?.avatar || '/images/default-avatar.svg'}
+              className="profile-avatar"
+              alt={user?.name || 'User'}
+            />
+            <div className="profile-info">
+              <h2 className="profile-name">{user?.name || 'User'}</h2>
+              <p className="profile-occupation">UX Designer</p>
+              
+              <div className="profile-stats">
+                <div className="stat-item">
+                  <span className="stat-value">{reviewCount}</span>
+                  <span className="stat-label">Reviews Written</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">8</span>
+                  <span className="stat-label">Cafes Discovered</span>
+                </div>
               </div>
             </div>
-          </Stack>
-        </Paper>
+          </div>
+          
+          <div className="xp-container">
+            <div className="xp-label">
+              <span>Level 7: Cafe Aficionado</span>
+              <span>75%</span>
+            </div>
+            <div className="xp-bar-container">
+              <div className="xp-bar-progress" style={{ width: '75%' }}></div>
+            </div>
+          </div>
+        </div>
         
         {/* Bookmarked Cafes Card */}
         <div className="bento-card bookmarked-cafes">
