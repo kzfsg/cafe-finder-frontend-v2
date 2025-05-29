@@ -495,6 +495,31 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
+/* Cafe title styles */
+.cafe-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 15px;
+  z-index: 2;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.cafe-overlay .cafe-title,
+.cafe-overlay h3.cafe-title,
+.cafe-card .cafe-overlay .cafe-title {
+  font-size: 1.4rem; /* Increased from 1.1rem */
+  font-weight: 700; /* Made bolder */
+  margin: 0 0 10px 0; /* Added bottom margin */
+  color: white !important;
+  position: relative;
+  z-index: 3;
+  text-shadow: 0 3px 9px rgba(0, 0, 0, 0.8);
+}
+
+
 /* Overlay effect on hover */
 .cafe-card::after {
   content: '';

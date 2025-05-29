@@ -83,7 +83,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
           <img 
             key={index}
             src={img || defaultImage} 
-            alt={`${title} - image ${index + 1}`} 
+            alt={`${displayTitle} - image ${index + 1}`} 
             className={`cafe-image ${index === currentImageIndex ? 'active' : ''}`}
             loading="lazy"
             onError={(e) => {
@@ -93,33 +93,59 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
           />
         ))}
         
+        {/* Top bar with distance and actions */}
+        <div className="cafe-top-bar">
+          {/* Distance indicator */}
+          {distance !== undefined && (
+            <div className="cafe-distance-badge">
+              <img src="/icons/location.svg" alt="Distance" className="distance-icon" />
+              <span>{distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}</span>
+            </div>
+          )}
+          
+          {/* Vote buttons */}
+          <div className="card-vote-buttons">
+            <UpvoteButton 
+              cafeId={id} 
+              upvotes={upvotes} 
+              onUpvote={onUpvote}
+            />
+            <DownvoteButton 
+              cafeId={id} 
+              downvotes={downvotes} 
+              onDownvote={onDownvote}
+            />
+          </div>
+        </div>
+        
+        {/* Bottom overlay with title and amenities */}
+        <div className="cafe-overlay">
+          {/* Cafe title */}
+          <h3 className="cafe-title">{displayTitle}</h3>
+          
+          {/* Amenities */}
+          <div className="cafe-meta">
+            <div className={`amenity wifi ${hasWifi || wifi ? 'available' : 'unavailable'}`}>
+              <img 
+                src="/icons/wifi.svg"
+                alt="WiFi" 
+                className="amenity-icon" 
+              />
+            </div>
+            <div className={`amenity power ${hasPower || powerOutletAvailable ? 'available' : 'unavailable'}`}>
+              <img 
+                src="/icons/power.svg"
+                alt="Power Outlets" 
+                className="amenity-icon" 
+              />
+            </div>
+          </div>
+        </div>
+        
         {/* Bookmark button */}
         <BookmarkButton cafeId={id} />
         
-        {/* Distance indicator */}
-        {distance !== undefined && (
-          <div className="cafe-distance-badge">
-            <img src="/icons/location.svg" alt="Distance" className="distance-icon" />
-            <span>{distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}</span>
-          </div>
-        )}
-        
-        <div className="card-vote-buttons">
-          {/* Upvote button */}
-          <UpvoteButton 
-            cafeId={id} 
-            upvotes={upvotes} 
-            onUpvote={onUpvote}
-          />
-          
-          {/* Downvote button */}
-          <DownvoteButton 
-            cafeId={id} 
-            downvotes={downvotes} 
-            onDownvote={onDownvote}
-          />
-        </div>
-        
+        {/* Gallery indicators */}
         {uniqueImages.length > 1 && (
           <div className="gallery-indicators">
             {uniqueImages.map((_, index) => (
@@ -130,28 +156,6 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
             ))}
           </div>
         )}
-      </div>
-      <div className="cafe-content">
-        <div className="cafe-header">
-          <h3 className="cafe-title">{displayTitle}</h3>
-          <div className="cafe-meta">
-            <div className={`amenity wifi ${hasWifi || wifi ? 'available' : 'unavailable'}`}>
-              <img 
-                src="/icons/wifi.svg" 
-                alt="WiFi" 
-                className="amenity-icon" 
-              />
-            </div>
-            <div className={`amenity power ${hasPower || powerOutletAvailable ? 'available' : 'unavailable'}`}>
-              <img 
-                src="/icons/power.svg" 
-                alt="Power Outlets" 
-                className="amenity-icon" 
-              />
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
