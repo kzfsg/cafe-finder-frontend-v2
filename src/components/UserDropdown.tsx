@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { FiUser, FiBookmark, FiLogOut, FiChevronDown } from 'react-icons/fi';
 import '../styles/UserDropdown.css';
 
@@ -11,28 +11,27 @@ interface UserDropdownProps {
 }
 
 interface DropdownItemProps {
-  icon: React.ReactNode;
+  icon: typeof FiUser;
   text: string;
   onClick?: () => void;
   to?: string;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Animation variants
 const wrapperVariants = {
   open: {
-    opacity: 1,
     scaleY: 1,
+    opacity: 1,
     transition: {
-      when: "beforeChildren",
+      when: 'beforeChildren',
       staggerChildren: 0.1,
     },
   },
   closed: {
-    opacity: 0,
     scaleY: 0,
+    opacity: 0,
     transition: {
-      when: "afterChildren",
+      when: 'afterChildren',
       staggerChildren: 0.1,
     },
   },
@@ -48,14 +47,14 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      when: "beforeChildren",
+      when: 'beforeChildren',
     },
   },
   closed: {
     opacity: 0,
     y: -15,
     transition: {
-      when: "afterChildren",
+      when: 'afterChildren',
     },
   },
 };
@@ -66,41 +65,44 @@ const actionIconVariants = {
 };
 
 // Dropdown item component
-const DropdownItem = ({ icon, text, onClick, to, setOpen }: DropdownItemProps) => {
-  const handleClick = () => {
-    setOpen(false);
-    if (onClick) onClick();
-  };
+const DropdownItem = ({ icon: Icon, text, onClick, to }: DropdownItemProps) => {
+  if (to) {
+    return (
+      <motion.li variants={itemVariants}>
+        <Link to={to} className="dropdown-item">
+          <motion.span variants={actionIconVariants} className="item-icon">
+            <Icon />
+          </motion.span>
+          <span>{text}</span>
+        </Link>
+      </motion.li>
+    );
+  }
   
-  // Determine if this is a logout item to apply special styling
-  const isLogout = text.toLowerCase() === 'log out';
-  const itemClass = `dropdown-item ${isLogout ? 'logout' : ''}`;
-  
-  const content = (
-    <motion.li
-      variants={itemVariants}
-      onClick={handleClick}
-      className={itemClass}
-    >
-      <motion.span variants={actionIconVariants} className="dropdown-icon">
-        {icon}
-      </motion.span>
-      <span>{text}</span>
+  return (
+    <motion.li variants={itemVariants}>
+      <button onClick={onClick} className="dropdown-item">
+        <motion.span variants={actionIconVariants} className="item-icon">
+          <Icon />
+        </motion.span>
+        <span>{text}</span>
+      </button>
     </motion.li>
   );
-  
-  return to ? <Link to={to} className={itemClass}>{content}</Link> : content;
 };
 
 export default function UserDropdown({ username, avatarUrl, onLogout }: UserDropdownProps) {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+  };
   
   return (
-    <div className="dropdown-container">
-      <motion.button
-        animate={open ? "open" : "closed"}
-        onClick={() => setOpen(prev => !prev)}
-        className="profile-button"
+    <div className="user-dropdown-container">
+      <button 
+        className="profile-button" 
+        onClick={toggleDropdown}
         aria-label="User profile"
       >
         <img 
@@ -108,42 +110,24 @@ export default function UserDropdown({ username, avatarUrl, onLogout }: UserDrop
           alt={username} 
           className="profile-image"
         />
-        <motion.span variants={iconVariants} className="dropdown-icon">
+        <motion.span 
+          variants={iconVariants}
+          animate={isOpen ? 'open' : 'closed'}
+          className="dropdown-arrow"
+        >
           <FiChevronDown />
         </motion.span>
-      </motion.button>
+      </button>
       
       <motion.ul
-        initial={"closed"}
-        animate={open ? "open" : "closed"}
-        variants={wrapperVariants}
-        style={{ originY: "top" }}
         className="dropdown-menu"
+        initial={wrapperVariants.closed}
+        animate={isOpen ? 'open' : 'closed'}
+        variants={wrapperVariants}
       >
-        <motion.div variants={itemVariants} className="dropdown-header">
-          <span className="greeting-text">Hi, {username}</span>
-        </motion.div>
-        
-        <DropdownItem 
-          icon={<FiUser />} 
-          text="Profile" 
-          to="/profile" 
-          setOpen={setOpen} 
-        />
-        
-        <DropdownItem 
-          icon={<FiBookmark />} 
-          text="Saved Cafes" 
-          to="/saved" 
-          setOpen={setOpen} 
-        />
-        
-        <DropdownItem 
-          icon={<FiLogOut />} 
-          text="Log Out" 
-          onClick={onLogout} 
-          setOpen={setOpen} 
-        />
+        <DropdownItem icon={FiUser} text="Profile" to="/profile" />
+        <DropdownItem icon={FiBookmark} text="Saved Cafes" to="/saved" />
+        <DropdownItem icon={FiLogOut} text="Log Out" onClick={onLogout} />
       </motion.ul>
     </div>
   );
