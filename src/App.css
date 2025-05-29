@@ -555,6 +555,37 @@ body {
   z-index: 2;
 }
 
+/* Distance badge */
+.cafe-distance-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 16px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  z-index: 5;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-family: 'nunito';
+}
+
+.cafe-distance-badge img {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.cafe-distance-badge:hover {
+  background-color: white;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* Bookmark button */
 .bookmark-button {
   position: absolute;
@@ -874,6 +905,8 @@ body {
   padding: 15px;
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
 }
 
 .cafe-title {
@@ -899,7 +932,11 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-top: 5px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #666;
+  font-family: 'nunito';
+  font-weight: 500;
   margin-bottom: 5px;
   font-family: 'nunito';
   font-size: 12px;

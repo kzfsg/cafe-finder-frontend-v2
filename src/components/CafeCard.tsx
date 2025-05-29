@@ -24,7 +24,7 @@ interface CafeCardProps {
   onClick?: () => void;
 }
 
-export default function CafeCard({ id = 0, title, name, image, images = [], description, hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, downvotes = 0, distance, onUpvote, onDownvote, onClick }: CafeCardProps) {
+export default function CafeCard({ id = 0, title, name, image, images = [], hasWifi = false, hasPower = false, wifi = false, powerOutletAvailable = false, upvotes = 0, downvotes = 0, distance, onUpvote, onDownvote, onClick }: CafeCardProps) {
   // Use name as title if title is not provided (for Supabase compatibility)
   const displayTitle = title || name || 'Unnamed Cafe';
   // No need for upvote state management here - moved to UpvoteButton component
@@ -96,6 +96,14 @@ export default function CafeCard({ id = 0, title, name, image, images = [], desc
         {/* Bookmark button */}
         <BookmarkButton cafeId={id} />
         
+        {/* Distance indicator */}
+        {distance !== undefined && (
+          <div className="cafe-distance-badge">
+            <img src="/icons/location.svg" alt="Distance" className="distance-icon" />
+            <span>{distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}</span>
+          </div>
+        )}
+        
         <div className="card-vote-buttons">
           {/* Upvote button */}
           <UpvoteButton 
@@ -143,19 +151,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], desc
             </div>
           </div>
         </div>
-        {distance !== undefined && (
-          <div className="cafe-distance">
-            <img src="/icons/location.svg" alt="Distance" className="distance-icon" />
-            <span>{distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`} away</span>
-          </div>
-        )}
-        <p className="cafe-description">
-          {typeof description === 'string' 
-            ? description.length > 120 
-              ? `${description.substring(0, 120)}...` 
-              : description
-            : 'No description available'}
-        </p>
+
       </div>
     </div>
   );
