@@ -135,23 +135,31 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
           {/* Bookmark button */}
           <BookmarkButton cafeId={id} />
           
-          {/* Amenities */}
-          <div className="cafe-meta">
-            <div className={`amenity wifi ${hasWifi || wifi ? 'available' : 'unavailable'}`}>
-              <img 
-                src="/icons/wifi.svg"
-                alt="WiFi" 
-                className="amenity-icon" 
-              />
+          {/* Amenities - Only show if at least one amenity exists */}
+          {(hasWifi || wifi || hasPower || powerOutletAvailable) && (
+            <div className="cafe-meta">
+              {(hasWifi || wifi) && (
+                <div className="amenity wifi available">
+                  <img 
+                    src="/icons/wifi.svg"
+                    alt="WiFi Available" 
+                    className="amenity-icon" 
+                    title="WiFi Available"
+                  />
+                </div>
+              )}
+              {(hasPower || powerOutletAvailable) && (
+                <div className="amenity power available">
+                  <img 
+                    src="/icons/power.svg"
+                    alt="Power Outlets Available" 
+                    className="amenity-icon"
+                    title="Power Outlets Available"
+                  />
+                </div>
+              )}
             </div>
-            <div className={`amenity power ${hasPower || powerOutletAvailable ? 'available' : 'unavailable'}`}>
-              <img 
-                src="/icons/power.svg"
-                alt="Power Outlets" 
-                className="amenity-icon" 
-              />
-            </div>
-          </div>
+          )}
         </div>
         
         {/* Gallery indicators */}
