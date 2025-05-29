@@ -1,0 +1,98 @@
+/* UserDropdown styles */
+.dropdown-container {
+  position: relative;
+}
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 50px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.profile-image {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  width: 220px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.dropdown-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.greeting-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #555;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+  color: #FF5722;
+}
+
+.dropdown-item.logout:hover {
+  color: #F44336;
+}
+
+.dropdown-icon {
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+/* Animation classes */
+.dropdown-enter {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+}
+
+.dropdown-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.dropdown-exit {
+  opacity: 1;
+}
+
+.dropdown-exit-active {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+  transition: opacity 200ms, transform 200ms;
+}
