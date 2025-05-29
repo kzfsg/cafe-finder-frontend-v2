@@ -1,13 +1,60 @@
-import { Container, Title, Text, Paper, Avatar, Group, Stack, Button } from '@mantine/core';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react';
+import { Container, Title, Button, Paper, Group, Stack, Avatar, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { FiSettings, FiUsers, FiAward } from 'react-icons/fi';
+import CafeCard from '../components/CafeCard';
+import reviewService from '../services/reviewService';
+import bookmarkService from '../services/bookmarkService';
+import type { Cafe } from '../data/cafes';
+import type { Review } from '../services/reviewService';
+
+// Extend the Review type to include the additional fields we're adding
+type ExtendedReview = Review & {
+  cafe_name: string;
+  cafe_image?: string;
+};
+import '../styles/Dashboard.css';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
-
-  if (!user) {
+  const { user, isAuthenticated } = useAuth();
+  const [userReviews, setUserReviews] = useState<ExtendedReview[]>([]);
+  const [bookmarkedCafes, setBookmarkedCafes] = useState<Cafe[]>([]);
+  const [reviewCount, setReviewCount] = useState(0);
+  
+  // Fetch user data when component mounts
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Fetch user reviews
+      const fetchUserReviews = async () => {
+        try {
+          const reviews = await reviewService.getUserReviews(user.id) as ExtendedReview[];
+          setUserReviews(reviews);
+          setReviewCount(reviews.length);
+        } catch (error) {
+          console.error('Error fetching user reviews:', error);
+        }
+      };
+      
+      // Fetch bookmarked cafes
+      const fetchBookmarkedCafes = async () => {
+        try {
+          const bookmarks = await bookmarkService.getBookmarkedCafes();
+          setBookmarkedCafes(bookmarks);
+        } catch (error) {
+          console.error('Error fetching bookmarked cafes:', error);
+        }
+      };
+      
+      fetchUserReviews();
+      fetchBookmarkedCafes();
+    }
+  }, [isAuthenticated, user]);
+  
+  // If user is not authenticated, show login prompt
+  if (!isAuthenticated) {
     return (
-      <Container size="md" py="xl">
+      <Container size="sm" style={{ padding: '2rem', textAlign: 'center' }}>
         <Title order={2} mb="md">Please log in to view your profile</Title>
         <Button component={Link} to="/login" variant="filled">
           Go to Login
@@ -16,60 +63,152 @@ export default function ProfilePage() {
     );
   }
 
+  // Format date for review display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 60px)',
-      backgroundColor: '#F0F2F5',
-      padding: '2rem 0'
-    }}>
-      <Container size="md">
-        <Paper 
-          p="xl" 
-          radius="lg" 
-          shadow="sm" 
-          style={{ 
-            backgroundColor: 'white',
-            maxWidth: '800px',
-            margin: '0 auto'
-          }}
-        >
-          <Group align="flex-start" gap="xl">
-            <Avatar 
-              src={user.avatar} 
-              size={120} 
-              radius={60}
-              style={{ border: '3px solid #F0F2F5' }}
+    <div className="dashboard-container">
+      
+      <div className="bento-grid">
+        {/* User Profile Card */}
+        <div className="bento-card profile-card">
+          <div className="profile-header">
+            <Avatar
+              src={user?.avatar || '/images/default-avatar.svg'}
+              className="profile-avatar"
+              alt={user?.name || 'User'}
             />
-            
-            <Stack gap="xs" style={{ flex: 1 }}>
-              <Title order={2} style={{ marginBottom: '1rem' }}>
-                {user.name || 'User Profile'}
-              </Title>
+            <div className="profile-info">
+              <h2 className="profile-name">{user?.name || 'User'}</h2>
+              <p className="profile-occupation">UX Designer</p>
               
-              <div>
-                <Text size="sm" color="dimmed">Email</Text>
-                <Text size="lg">{user.email}</Text>
+              <div className="profile-stats">
+                <div className="stat-item">
+                  <span className="stat-value">{reviewCount}</span>
+                  <span className="stat-label">Reviews Written</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">8</span>
+                  <span className="stat-label">Cafes Discovered</span>
+                </div>
               </div>
+            </div>
+          </div>
+          
+          <div className="xp-container">
+            <div className="xp-label">
+              <span>Level 7: Cafe Aficionado</span>
+              <span>75%</span>
+            </div>
+            <div className="xp-bar-container">
+              <div className="xp-bar-progress" style={{ width: '75%' }}></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Bookmarked Cafes Card */}
+        <div className="bento-card bookmarked-cafes">
+          <h3 className="card-title">My Bookmarked Cafes</h3>
+          
+          {bookmarkedCafes.length > 0 ? (
+            <div className="mini-masonry">
+              {bookmarkedCafes.slice(0, 3).map((cafe) => (
+                <div key={cafe.id} className="mini-cafe-card">
+                  <CafeCard
+                    id={cafe.id}
+                    title={cafe.name}
+                    image={cafe.imageUrls?.[0]}
+                    images={cafe.imageUrls}
+                    wifi={cafe.wifi}
+                    powerOutletAvailable={cafe.powerOutletAvailable}
+                  />
+                </div>
+              ))}
               
-              <div style={{ marginTop: '1rem' }}>
-                <Text size="sm" color="dimmed">Member Since</Text>
-                <Text size="md">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </Text>
-              </div>
+              {bookmarkedCafes.length > 3 && (
+                <Button
+                  component={Link}
+                  to="/bookmarks"
+                  variant="light"
+                  color="orange"
+                  fullWidth
+                  mt="md"
+                >
+                  View All ({bookmarkedCafes.length})
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Text color="dimmed" ta='center' mt="xl">
+              You haven't bookmarked any cafes yet.
+            </Text>
+          )}
+        </div>
+        
+        {/* My Reviews Card */}
+        <div className="bento-card reviews-card">
+          <h3 className="card-title">My Recent Reviews</h3>
+          
+          {userReviews.length > 0 ? (
+            <div className="reviews-list">
+              {userReviews.slice(0, 3).map((review, index) => (
+                <div key={index} className="review-item">
+                  <div className="review-cafe">{review.cafe_name}</div>
+                  <div className="review-content">{review.comment}</div>
+                  <div className="review-rating">
+                    {review.rating ? '👍' : '👎'}
+                  </div>
+                  {review.cafe_image && (
+                    <img 
+                      src={review.cafe_image} 
+                      alt={review.cafe_name} 
+                      className="review-cafe-image"
+                      style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }}
+                    />
+                  )}
+                  <div className="review-date">{formatDate(review.created_at)}</div>
+                </div>
+              ))}
               
-              <Button 
-                component={Link} 
-                to="/profile/edit" 
-                variant="outline" 
-                style={{ marginTop: '1.5rem', width: 'fit-content' }}
-              >
-                Edit Profile
-              </Button>
-            </Stack>
-          </Group>
-        </Paper>
-      </Container>
+              {userReviews.length > 3 && (
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  fullWidth
+                  mt="md"
+                >
+                  View All Reviews
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Text color="dimmed" ta="center" mt="xl">
+              You haven't written any reviews yet.
+            </Text>
+          )}
+        </div>
+        
+        {/* Settings Card */}
+        <div className="bento-card settings-card action-card">
+          <FiSettings className="action-icon" />
+          <span className="action-label">Settings</span>
+        </div>
+        
+        {/* Community Card */}
+        <div className="bento-card community-card action-card">
+          <FiUsers className="action-icon" />
+          <span className="action-label">Community</span>
+        </div>
+        
+        {/* Leaderboard Card */}
+        <div className="bento-card leaderboard-card action-card">
+          <FiAward className="action-icon" />
+          <span className="action-label">Leaderboard</span>
+        </div>
+      </div>
     </div>
   );
 }

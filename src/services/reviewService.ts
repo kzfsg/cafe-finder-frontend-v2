@@ -15,6 +15,8 @@ export interface Review {
   comment: string;
   created_at: string;
   updated_at: string;
+  cafe_name?: string;
+  cafe_image?: string;
   user?: {
     username: string;
     avatar_url?: string;
@@ -22,6 +24,32 @@ export interface Review {
 }
 
 const reviewService = {
+  // Get all reviews for a specific user with cafe details
+  async getUserReviews(userId: string): Promise<Review[]> {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles:user_id(username, avatar_url),
+          cafes:cafe_id(name, imageUrls)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data.map(review => ({
+        ...review,
+        cafe_name: review.cafes?.name || 'Unknown Cafe',
+        cafe_image: review.cafes?.imageUrls?.[0]
+      }));
+    } catch (error) {
+      console.error('Error fetching user reviews:', error);
+      throw error;
+    }
+  },
+
   // Get all reviews for a specific cafe
   async getCafeReviews(cafeId: number): Promise<Review[]> {
     try {
