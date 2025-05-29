@@ -26,14 +26,14 @@ export default function Navbar({ onSearch }: NavbarProps) {
       position: 'sticky',
       top: 0,
       zIndex: 1000,
-      backgroundColor: '#fff',
+      backgroundColor: '#333333',
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
     }}> 
       <div className="navbar-left">
         <Link to="/" className="logo-link">
           <div className="logo">
             <img src="/favicon.svg" alt="Nomadic logo" className="logo-icon" />
-            <span className="logo-text tryst">nomadic</span>
+            <span className="logo-text tryst" style={{ color: 'white' }}>nomadic</span>
           </div>
         </Link>
       </div>
@@ -43,8 +43,8 @@ export default function Navbar({ onSearch }: NavbarProps) {
       </div>
       
       <div className="navbar-right">
-        <Link to="/bookmarks" className="icon-button saved-button" aria-label="Bookmarked cafes">
-          <img src="/icons/bookmark.svg" alt="Bookmarked cafes" className="custom-icon" />
+        <Link to="/bookmarks" className="icon-button saved-button" aria-label="Bookmarked cafes" style={{ color: 'white' }}>
+          <img src="/icons/bookmark.svg" alt="Bookmarked cafes" className="custom-icon" style={{ filter: 'brightness(0) invert(1)' }} />
         </Link>
         
         {user ? (

@@ -196,10 +196,10 @@ export default function HomePage() {
   return (
     <>
       <Container size="lg" py="xl">
-        <Title order={1} mb="lg" className="tryst" ta="center">Nomadic</Title>
+        {/* <Title order={1} mb="lg" className="tryst" ta="center">Nomadic</Title>
         <Text size="lg" mb="xl" className="nunitoItalic" ta="center" c="dimmed">
           Find your perfect workspace
-        </Text>
+        </Text> */}
         
         {/* Cafe Grid */}
         {cafesWithDistance.length > 0 ? (

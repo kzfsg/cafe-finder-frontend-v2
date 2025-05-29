@@ -5,6 +5,7 @@ import { Notifications } from '@mantine/notifications';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import BookmarkPage from './pages/BookmarkPage';
+import ProfilePage from './pages/ProfilePage';
 import CafeDetails from './components/CafeDetails';
 import Login from './components/auth/Login';
 import SignUp from './components/auth/SignUp';
@@ -99,6 +100,14 @@ function App() {
                   />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<SignUp />} />
+                  <Route 
+                    path="/profile" 
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    } 
+                  />
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </main>
