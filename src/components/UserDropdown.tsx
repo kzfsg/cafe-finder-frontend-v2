@@ -126,7 +126,7 @@ export default function UserDropdown({ username, avatarUrl, onLogout }: UserDrop
         variants={wrapperVariants}
       >
         <DropdownItem icon={FiUser} text="Profile" to="/profile" />
-        <DropdownItem icon={FiBookmark} text="Saved Cafes" to="/saved" />
+        <DropdownItem icon={FiBookmark} text="Saved Cafes" to="/bookmarks" />
         <DropdownItem icon={FiLogOut} text="Log Out" onClick={onLogout} />
       </motion.ul>
     </div>
