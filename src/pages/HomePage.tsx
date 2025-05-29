@@ -171,24 +171,45 @@ export default function HomePage() {
     };
   }, [loadMoreCafes]);
   
-  // Handle upvote/downvote updates to keep state in sync between card and details view
-  const handleVoteUpdate = (cafeId: number, updatedCafe: Cafe) => {
-    console.log('Vote update received for cafe:', cafeId);
+  // Handle upvote/downvote updates with optimistic UI updates
+  const handleVoteUpdate = async (cafeId: number, updatedCafe: Cafe) => {
+    console.log('Vote update received for cafe:', cafeId, updatedCafe);
     
-    // Update the cafe in the list with the new data
+    // Optimistically update the UI immediately
     const updatedCafes = displayedCafes.map(cafe => 
       cafe.id === cafeId ? { ...cafe, ...updatedCafe } : cafe
     );
     setDisplayedCafes(updatedCafes);
     
-    // If this is the currently selected cafe, update it too
-    if (selectedCafe && selectedCafe.id === cafeId) {
-      setSelectedCafe({ ...selectedCafe, ...updatedCafe });
+    // Update the selected cafe if it's the one being voted on
+    if (selectedCafe?.id === cafeId) {
+      setSelectedCafe(prev => prev ? { ...prev, ...updatedCafe } : null);
     }
     
-    // Trigger a refetch to ensure data consistency with the backend
-    // This is important to keep vote counts and status in sync
-    setTimeout(() => refetch(), 300);
+    try {
+      // Refetch the data to ensure consistency with the backend
+      const { data } = await refetch();
+      
+      if (data) {
+        // If refetch was successful, update with fresh data
+        const cafeFromServer = data.find((c: Cafe) => c.id === cafeId);
+        if (cafeFromServer) {
+          setDisplayedCafes(prev => 
+            prev.map(cafe => 
+              cafe.id === cafeId ? { ...cafe, ...cafeFromServer } : cafe
+            )
+          );
+          
+          if (selectedCafe?.id === cafeId) {
+            setSelectedCafe(prev => prev ? { ...prev, ...cafeFromServer } : null);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating votes:', error);
+      // Optionally, you could revert the optimistic update here
+      // or show an error message to the user
+    }
   };
 
   // Handle closing the cafe details modal
