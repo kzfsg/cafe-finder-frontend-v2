@@ -123,9 +123,17 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose, onVoteUpdate }
               onUpvote={(_, newUpvoteCount, updatedCafe) => {
                 // Update the cafe state if callback is provided
                 if (onVoteUpdate && updatedCafe) {
-                  onVoteUpdate(updatedCafe);
+                  // Just pass the updated cafe with the new vote count
+                  onVoteUpdate({
+                    ...updatedCafe,
+                    id: cafe.id,  // Ensure ID is included
+                    upvotes: newUpvoteCount  // Ensure upvote count is updated
+                  });
+                  console.log('Cafe upvoted to', newUpvoteCount);
+                  
+                  // Force refresh of the component by updating the upvotes in the local cafe object
+                  cafe.upvotes = newUpvoteCount;
                 }
-                console.log('Cafe upvoted to', newUpvoteCount, updatedCafe);
               }}
             />
             <DownvoteButton
@@ -134,9 +142,17 @@ const CafeDetails: React.FC<CafeDetailsProps> = ({ cafe, onClose, onVoteUpdate }
               onDownvote={(_, newDownvoteCount, updatedCafe) => {
                 // Update the cafe state if callback is provided
                 if (onVoteUpdate && updatedCafe) {
-                  onVoteUpdate(updatedCafe);
+                  // Just pass the updated cafe with the new vote count
+                  onVoteUpdate({
+                    ...updatedCafe,
+                    id: cafe.id,  // Ensure ID is included
+                    downvotes: newDownvoteCount  // Ensure downvote count is updated
+                  });
+                  console.log('Cafe downvoted to', newDownvoteCount);
+                  
+                  // Force refresh of the component by updating the downvotes in the local cafe object
+                  cafe.downvotes = newDownvoteCount;
                 }
-                console.log('Cafe downvoted to', newDownvoteCount, updatedCafe);
               }}
             />
           </div>

@@ -319,7 +319,15 @@ export default function HomePage() {
           <CafeDetails
             cafe={selectedCafe}
             onClose={handleCloseDetails}
-            onVoteUpdate={(updatedCafe) => handleVoteUpdate(selectedCafe.id, updatedCafe)}
+            onVoteUpdate={(updatedCafe) => {
+              // Handle the vote update
+              handleVoteUpdate(selectedCafe.id, updatedCafe);
+              
+              // Force a full refresh of data to ensure all components are updated
+              setTimeout(() => {
+                refetch();
+              }, 500); // Small delay to ensure the update has been processed
+            }}
           />
         )}
       </Modal>

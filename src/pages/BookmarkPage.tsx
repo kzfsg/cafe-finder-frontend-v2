@@ -69,6 +69,40 @@ export default function BookmarkPage() {
     setDetailsModalOpen(true);
   };
 
+  // Handle upvote/downvote updates
+  const handleVoteUpdate = (cafeId: number, updatedCafe: Cafe) => {
+    console.log('Vote update received for cafe in BookmarkPage:', cafeId, updatedCafe);
+    
+    // Update the displayed cafes - carefully preserve all original properties
+    setDisplayedCafes(prevCafes => 
+      prevCafes.map(cafe => {
+        if (cafe.id === cafeId) {
+          // Create a merged object that prioritizes keeping original properties
+          // but updates the vote counts
+          return {
+            ...cafe,                     // Keep all original properties first
+            upvotes: updatedCafe.upvotes || cafe.upvotes || 0,
+            downvotes: updatedCafe.downvotes || cafe.downvotes || 0
+          };
+        }
+        return cafe;
+      })
+    );
+    
+    // Update the selected cafe if it's the one being voted on
+    if (selectedCafe?.id === cafeId) {
+      setSelectedCafe(prev => {
+        if (!prev) return null;
+        // Same careful merging for the selected cafe
+        return {
+          ...prev,                      // Keep all original properties
+          upvotes: updatedCafe.upvotes || prev.upvotes || 0,
+          downvotes: updatedCafe.downvotes || prev.downvotes || 0
+        };
+      });
+    }
+  };
+
   // Handle closing the cafe details modal
   const handleCloseDetails = () => {
     setDetailsModalOpen(false);
@@ -138,8 +172,8 @@ export default function BookmarkPage() {
                 downvotes={cafe.downvotes || 0}
                 distance={cafe.distance}
                 onClick={() => handleCafeClick(cafe)}
-                onUpvote={() => {}}
-                onDownvote={() => {}}
+                onUpvote={(_, __, updatedCafe) => handleVoteUpdate(cafe.id, updatedCafe)}
+                onDownvote={(_, __, updatedCafe) => handleVoteUpdate(cafe.id, updatedCafe)}
               />
             ))}
           </MasonryGrid>
@@ -156,7 +190,21 @@ export default function BookmarkPage() {
         centered
       >
         {selectedCafe && (
-          <CafeDetails cafe={selectedCafe} onClose={handleCloseDetails} />
+          <CafeDetails
+            cafe={selectedCafe}
+            onClose={handleCloseDetails}
+            onVoteUpdate={(updatedCafe) => {
+              if (selectedCafe) {
+                // Create a complete updated cafe object that preserves all original properties
+                const completeUpdatedCafe = {
+                  ...selectedCafe,  // Keep all original properties
+                  upvotes: updatedCafe.upvotes || selectedCafe.upvotes || 0,
+                  downvotes: updatedCafe.downvotes || selectedCafe.downvotes || 0
+                };
+                handleVoteUpdate(selectedCafe.id, completeUpdatedCafe);
+              }
+            }}
+          />
         )}
       </Modal>
     </>
