@@ -6,11 +6,9 @@ import {
   Text, 
   Loader, 
   Box,
-  SimpleGrid,
   Modal,
   Button,
   Center,
-  Image,
   Stack,
   rem
 } from '@mantine/core';
@@ -19,6 +17,7 @@ import { IconBookmark, IconArrowLeft } from '@tabler/icons-react';
 import bookmarkService from '../services/bookmarkService';
 import CafeCard from '../components/CafeCard';
 import CafeDetails from '../components/CafeDetails';
+import MasonryGrid from '../components/MasonryGrid';
 import type { Cafe } from '../data/cafes';
 import authService from '../services/authService';
 
@@ -26,6 +25,7 @@ import authService from '../services/authService';
 export default function BookmarkPage() {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [displayedCafes, setDisplayedCafes] = useState<Cafe[]>([]);
   const navigate = useNavigate();
 
   // Fetch bookmarked cafes using React Query
@@ -39,6 +39,11 @@ export default function BookmarkPage() {
     queryFn: () => bookmarkService.getBookmarkedCafes(),
     enabled: false // We'll manually trigger the query after auth check
   });
+  
+  // Update displayed cafes when bookmarkedCafes changes
+  useEffect(() => {
+    setDisplayedCafes(bookmarkedCafes);
+  }, [bookmarkedCafes]);
 
   // Check authentication and fetch bookmarks
   useEffect(() => {
@@ -97,10 +102,10 @@ export default function BookmarkPage() {
 
   return (
     <>
-      <Container size="lg" py="xl">
-        <Title order={1} mb="xl">My Bookmarked Cafes</Title>
+      <Container size="100%" py="xl" px="xs">
+        <Title order={1} mb="xl" px="md">My Bookmarked Cafes</Title>
         
-        {bookmarkedCafes.length === 0 ? (
+        {displayedCafes.length === 0 ? (
           <Center style={{ minHeight: '50vh' }}>
             <Stack align="center" gap="md">
               <IconBookmark size={64} stroke={1.5} style={{ opacity: 0.5 }} />
@@ -118,26 +123,26 @@ export default function BookmarkPage() {
             </Stack>
           </Center>
         ) : (
-          <SimpleGrid
-            cols={{ base: 1, sm: 2, md: 3, lg: 3 }}
-            spacing="lg"
-            verticalSpacing="lg"
-          >
-            {bookmarkedCafes.map((cafe) => (
+          <MasonryGrid columns={4}>
+            {displayedCafes.map((cafe) => (
               <CafeCard 
                 key={cafe.id}
                 id={cafe.id}
                 title={cafe.title || cafe.Name || 'Unnamed Cafe'}
                 description={cafe.description || 'No description available'}
                 image={cafe.imageUrls?.[0] || ''}
-                images={cafe.imageUrls || []}  // Use imageUrls for gallery
+                images={cafe.imageUrls || []}
                 hasWifi={cafe.wifi || false}
                 hasPower={cafe.powerOutletAvailable || false}
                 upvotes={cafe.upvotes || 0}
+                downvotes={cafe.downvotes || 0}
+                distance={cafe.distance}
                 onClick={() => handleCafeClick(cafe)}
+                onUpvote={() => {}}
+                onDownvote={() => {}}
               />
             ))}
-          </SimpleGrid>
+          </MasonryGrid>
         )}
       </Container>
 

@@ -262,7 +262,7 @@ export default function HomePage() {
         {/* Masonry Grid */}
         {displayedCafes.length > 0 ? (
           <>
-            <MasonryGrid columns={3}>
+            <MasonryGrid columns={4}>
               {displayedCafes.map((cafe) => (
                 <CafeCard 
                   key={cafe.id}
