@@ -78,7 +78,7 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ cafeId, className = '' 
     className
   ].filter(Boolean).join(' ');
   
-  const iconSrc = isBookmarked ? '/icons/bookmark-filled.svg' : '/icons/bookmark.svg';
+  const iconSrc = isBookmarked ? '/cafe-finder-frontend-v2/icons/bookmark-filled.svg' : '/cafe-finder-frontend-v2/icons/bookmark.svg';
   const iconAlt = isBookmarked ? 'Bookmarked' : 'Bookmark';
   const buttonTitle = isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks';
   

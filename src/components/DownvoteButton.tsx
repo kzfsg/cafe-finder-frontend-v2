@@ -114,7 +114,7 @@ const DownvoteButton: React.FC<DownvoteButtonProps> = ({
       aria-busy={isLoading}
     >
       <img 
-        src="/icons/downvote.svg" 
+        src="/cafe-finder-frontend-v2/icons/downvote.svg" 
         alt={isDownvoted ? 'Downvoted' : 'Downvote'} 
         className={`downvote-icon ${isDownvoted ? 'active' : ''} ${isLoading ? 'loading' : ''}`} 
       />

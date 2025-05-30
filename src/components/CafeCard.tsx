@@ -29,7 +29,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
   const displayTitle = title || name || 'Unnamed Cafe';
   // No need for upvote state management here - moved to UpvoteButton component
   // Default image placeholder (using local SVG instead of external service)
-  const defaultImage = '/images/no-image.svg';
+  const defaultImage = '/cafe-finder-frontend-v2/images/no-image.svg';
   
   // Ensure image is valid, use default if not
   const safeMainImage = image || defaultImage;
@@ -105,7 +105,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
           {/* Distance indicator */}
           {distance !== undefined && (
             <div className="cafe-distance-badge">
-              <img src="/icons/location.svg" alt="Distance" className="distance-icon" />
+              <img src="/cafe-finder-frontend-v2/icons/location.svg" alt="Distance" className="distance-icon" />
               <span>{distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}</span>
             </div>
           )}
@@ -141,7 +141,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
               {(hasWifi || wifi) && (
                 <div className="amenity wifi available">
                   <img 
-                    src="/icons/wifi.svg"
+                    src="/cafe-finder-frontend-v2/icons/wifi.svg"
                     alt="WiFi Available" 
                     className="amenity-icon" 
                     title="WiFi Available"
@@ -151,7 +151,7 @@ export default function CafeCard({ id = 0, title, name, image, images = [], hasW
               {(hasPower || powerOutletAvailable) && (
                 <div className="amenity power available">
                   <img 
-                    src="/icons/power.svg"
+                    src="/cafe-finder-frontend-v2/icons/power.svg"
                     alt="Power Outlets Available" 
                     className="amenity-icon"
                     title="Power Outlets Available"

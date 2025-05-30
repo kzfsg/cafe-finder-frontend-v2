@@ -114,7 +114,7 @@ const UpvoteButton: React.FC<UpvoteButtonProps> = ({
       aria-busy={isLoading}
     >
       <img 
-        src="/icons/upvote.svg" 
+        src="/cafe-finder-frontend-v2/icons/upvote.svg" 
         alt={isUpvoted ? 'Upvoted' : 'Upvote'} 
         className={`upvote-icon ${isUpvoted ? 'active' : ''} ${isLoading ? 'loading' : ''}`} 
       />

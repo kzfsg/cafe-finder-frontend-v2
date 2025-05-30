@@ -31,7 +31,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
       <div className="navbar-left">
         <Link to="/" className="logo-link">
           <div className="logo">
-            <img src="/favicon.svg" alt="Nomadic logo" className="logo-icon" />
+            <img src="/cafe-finder-frontend-v2/favicon.svg" alt="Nomadic logo" className="logo-icon" />
             <span className="logo-text tryst" style={{ color: 'white' }}>nomadic</span>
           </div>
         </Link>
@@ -43,7 +43,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
       
       <div className="navbar-right">
         <Link to="/bookmarks" className="icon-button saved-button" aria-label="Bookmarked cafes" style={{ color: 'white' }}>
-          <img src="/icons/bookmark.svg" alt="Bookmarked cafes" className="custom-icon" style={{ filter: 'brightness(0) invert(1)' }} />
+          <img src="/cafe-finder-frontend-v2/icons/bookmark.svg" alt="Bookmarked cafes" className="custom-icon" style={{ filter: 'brightness(0) invert(1)' }} />
         </Link>
         
         {user ? (

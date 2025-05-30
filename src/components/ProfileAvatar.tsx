@@ -23,7 +23,7 @@ export default function ProfileAvatar({
         />
       ) : (
         <img 
-          src="/icons/default-avatar.svg"
+          src="/cafe-finder-frontend-v2/icons/default-avatar.svg"
           alt="Default profile"
           className="profile-image"
         />
