@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Title, Button, Paper, Group, Stack, Avatar, Text } from '@mantine/core';
+import { Container, Title, Button, Avatar, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FiSettings, FiUsers, FiAward } from 'react-icons/fi';

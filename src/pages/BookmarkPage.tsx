@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Title, 
   Text, 
   Loader, 
-  Box,
   Modal,
   Button,
   Center,

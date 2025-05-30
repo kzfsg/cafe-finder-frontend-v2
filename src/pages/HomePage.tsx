@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Container, 
-  Title, 
   Text, 
   Loader, 
   Box,
@@ -10,7 +9,6 @@ import {
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import searchService from '../services/searchService';
 import batchedCafeService from '../services/batchedCafeService';
 import CafeCard from '../components/CafeCard';
 import CafeDetails from '../components/CafeDetails';

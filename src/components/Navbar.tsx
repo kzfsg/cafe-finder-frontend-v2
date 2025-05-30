@@ -1,7 +1,6 @@
 // No need to import React with modern JSX transform
 import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
-import ProfileAvatar from './ProfileAvatar';
 import UserDropdown from './UserDropdown';
 import { useAuth } from '../context/AuthContext';
 import './../App.css';
