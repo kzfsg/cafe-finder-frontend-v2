@@ -28,7 +28,7 @@ export default function HomePage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreCafes, setHasMoreCafes] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
-  const batchSize = 9; // Number of cafes to load in each batch
+  const batchSize = 12; // Number of cafes to load in each batch
   
   // Get user location on component mount
   useEffect(() => {
