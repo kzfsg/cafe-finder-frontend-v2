@@ -225,7 +225,7 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <Container size="lg" py="xl">
+      <Container size="100%" py="xl" px="xs">
         <Text c="red" size="lg" fw={500} mb="md">
           Error loading cafes
         </Text>
@@ -238,7 +238,7 @@ export default function HomePage() {
   // Show no results message if search was performed but no cafes found
   if (hasSearchParams && displayedCafes.length === 0 && !isLoading) {
     return (
-      <Container size="lg" py="xl">
+      <Container size="100%" py="xl" px="xs">
         <Text size="lg" mb="md">
           No cafes found matching your search criteria.
         </Text>
@@ -253,7 +253,7 @@ export default function HomePage() {
 
   return (
     <>
-      <Container size="lg" py="xl">
+      <Container size="100%" py="xl" px="xs">
         {/* <Title order={1} mb="lg" className="tryst" ta="center">Nomadic</Title>
         <Text size="lg" mb="xl" className="nunitoItalic" ta="center" c="dimmed">
           Find your perfect workspace
