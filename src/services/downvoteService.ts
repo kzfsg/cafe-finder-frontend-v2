@@ -5,10 +5,10 @@ import cafeService from './cafeService';
 import type { SupabaseCafe } from './cafeService';
 
 // Define the shape of the response from Supabase for downvotes
-interface DownvoteResponse {
-  cafe_id: number;
-  [key: string]: any;
-}
+// interface DownvoteResponse {
+//   cafe_id: number;
+//   [key: string]: any;
+// }
 
 // Table names for Supabase
 const CAFES_TABLE = 'cafes';

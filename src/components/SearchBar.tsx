@@ -38,7 +38,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     nearMe: null
   });
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,7 +53,6 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   const handleGetCurrentLocation = async () => {
     try {
       setIsLoadingLocation(true);
-      setLocationError(null);
       
       const position = await getCurrentLocation();
       const updatedFilters = { 
@@ -71,7 +69,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
       onSearch(query, updatedFilters);
     } catch (error) {
       console.error('Error getting location:', error);
-      setLocationError(error instanceof Error ? error.message : 'Failed to get your location');
+      // Reset nearMe on error
       const updatedFilters = { ...filters, nearMe: null };
       setFilters(updatedFilters);
     } finally {
