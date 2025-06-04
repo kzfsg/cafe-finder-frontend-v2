@@ -3,6 +3,18 @@ import authService from './authService';
 import type { Cafe } from '../data/cafes';
 import { transformCafeData } from './cafeService';
 
+// Define interfaces for database types
+interface BookmarkRecord {
+  cafe_id: number;
+  cafes: any; // This will be transformed into Cafe type
+  [key: string]: any; // Allow other properties that might come from the database
+}
+
+interface BookmarkResponse {
+  bookmarked: boolean;
+  message: string;
+}
+
 // Table name for bookmarks in Supabase
 const BOOKMARKS_TABLE = 'bookmarks';
 
@@ -54,7 +66,7 @@ const bookmarkService = {
       
       // Use Promise.all to transform all cafe data in parallel
       const transformedCafes = await Promise.all(
-        bookmarks.map(async (bookmark) => {
+        bookmarks.map(async (bookmark: BookmarkRecord) => {
           try {
             // Extract the cafe data from the bookmark
             const cafeData = bookmark.cafes;

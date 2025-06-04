@@ -4,6 +4,43 @@ import type { Cafe } from '../data/cafes';
 import { transformCafeData } from './cafeService';
 import type { FilterOptions } from '../components/FilterDropdown';
 
+// Define interface for cafe location
+interface CafeLocation {
+  latitude: number;
+  longitude: number;
+  city?: string;
+  [key: string]: any;
+}
+
+// Extended location interface to match Supabase structure
+interface DBCafeLocation {
+  latitude: number;
+  longitude: number;
+  city: string;
+  address: string;
+  country: string;
+  [key: string]: any;
+}
+
+// Define interface for database cafe record
+interface DBCafe {
+  id: number;
+  name: string;
+  description?: string | Record<string, any> | null;
+  location: DBCafeLocation;
+  images?: string[] | null;
+  wifi?: boolean;
+  powerOutletAvailable?: boolean;
+  seatingCapacity?: number | null;
+  noiseLevel?: string | null;
+  priceRange?: string | number | null;
+  upvotes?: number;
+  downvotes?: number;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any;
+}
+
 // Supabase table name
 const CAFES_TABLE = 'cafes';
 
@@ -138,7 +175,7 @@ const getAllCafeIdsWithLocation = async (
     
     // Calculate distance for each cafe, filter by radius if specified, and sort by distance
     const cafesWithDistance = data
-      .map((cafe: any) => {
+      .map((cafe: DBCafe) => {
         // Skip cafes without location data
         if (!cafe.location?.latitude || !cafe.location?.longitude) {
           return null;
@@ -196,7 +233,7 @@ const getCafeDetailsByIds = async (ids: number[]): Promise<Cafe[]> => {
     
     // Transform each cafe to our application format
     const transformedCafes = await Promise.all(
-      data.map((cafe: any) => transformCafeData(cafe))
+      data.map((cafe: DBCafe) => transformCafeData(cafe))
     );
     
     return transformedCafes;

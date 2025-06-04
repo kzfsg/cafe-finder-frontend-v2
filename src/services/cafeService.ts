@@ -1,6 +1,17 @@
 import { supabase } from '../supabase-client';
 import type { Cafe, CafeLocation } from '../data/cafes';
 
+// Define types for Supabase storage
+interface StorageBucket {
+  name: string;
+  [key: string]: any;
+}
+
+interface StorageFile {
+  name: string;
+  [key: string]: any;
+}
+
 // Supabase table names
 const CAFES_TABLE = 'cafes';
 
@@ -37,7 +48,7 @@ const ensureFullImageUrl = (imageUrl: string | null | undefined): string => {
 const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
   try {
     // First, check if the bucket exists
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets() as { data: StorageBucket[] | null; error: any };
     
     if (bucketsError) {
       console.error('Error listing storage buckets:', bucketsError);
@@ -54,7 +65,7 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
     const folderPath = `cafe-${cafeId}`;
     const { data: files, error } = await supabase.storage
       .from('cafe-images')
-      .list(folderPath);
+      .list(folderPath) as { data: StorageFile[] | null; error: any };
     
     if (error) {
       console.error(`Error listing images for cafe ${cafeId}:`, error);
@@ -88,9 +99,28 @@ const getCafeImageUrls = async (cafeId: number): Promise<string[]> => {
   }
 };
 
+// Define the shape of cafe data from Supabase
+export interface SupabaseCafe {
+  id: number;
+  name: string;
+  description?: string | Record<string, any> | null;
+  location: CafeLocation | null;
+  images?: string[] | null;
+  wifi?: boolean;
+  power_outlets?: boolean;
+  seating_capacity?: number | null;
+  noise_level?: string | null;
+  price_range?: string | null;
+  upvotes?: number;
+  downvotes?: number;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any; // For any additional properties
+}
+
 // Transform Supabase cafe data to our application's Cafe format
 // Export this function so it can be used by other services
-export const transformCafeData = async (supaCafe: any): Promise<Cafe> => {
+export const transformCafeData = async (supaCafe: SupabaseCafe | null): Promise<Cafe> => {
   try {
     console.log('Transforming Supabase cafe data:', supaCafe);
     

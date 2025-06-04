@@ -2,6 +2,7 @@ import { supabase } from '../supabase-client';
 import authService from './authService';
 import type { Cafe } from '../data/cafes';
 import cafeService from './cafeService';
+import type { SupabaseCafe } from './cafeService';
 
 // Table names for Supabase
 const CAFES_TABLE = 'cafes';
@@ -43,7 +44,7 @@ const getUpvotedCafes = async (): Promise<Cafe[]> => {
     }
     
     // Transform the raw cafe data to our application's Cafe format
-    return Promise.all((cafes || []).map(cafe => cafeService.transformCafeData(cafe)));
+    return Promise.all((cafes || []).map((cafe: SupabaseCafe) => cafeService.transformCafeData(cafe)));
   } catch (error) {
     console.error('Error in getUpvotedCafes:', error);
     return [];

@@ -1,6 +1,30 @@
 import { supabase } from '../supabase-client';
 import type { User } from './authService';
 
+// Define types for database responses
+interface Profile {
+  username: string;
+  avatar_url?: string;
+}
+
+interface CafeDetails {
+  name: string;
+  imageUrls?: string[];
+}
+
+interface DatabaseReview {
+  id: string;
+  user_id: string;
+  cafe_id: number;
+  rating: boolean;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile;
+  cafes?: CafeDetails;
+  [key: string]: any;
+}
+
 export interface ReviewSubmission {
   cafe_id: number;
   rating: boolean; // true for positive, false for negative
@@ -39,7 +63,7 @@ const reviewService = {
 
       if (error) throw error;
 
-      return data.map(review => ({
+      return (data as DatabaseReview[]).map((review: DatabaseReview) => ({
         ...review,
         cafe_name: review.cafes?.name || 'Unknown Cafe',
         cafe_image: review.cafes?.imageUrls?.[0]
@@ -64,8 +88,8 @@ const reviewService = {
 
       if (error) throw error;
 
-      // Transform the data to match our Review interface
-      return (data || []).map((review: any) => ({
+// Transform the data to match our Review interface
+      return (data || [] as DatabaseReview[]).map((review: DatabaseReview) => ({
         ...review,
         user: review.profiles ? {
           username: review.profiles.username,
