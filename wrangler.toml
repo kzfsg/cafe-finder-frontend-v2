@@ -1,0 +1,14 @@
+name = "cafe-finder-frontend"
+compatibility_date = "2024-06-04"
+
+[build]
+command = "npm run build"
+publish = "dist"
+
+[site]
+bucket = "dist"
+entry-point = "dist"
+
+# Uncomment and configure these if you need environment variables
+# [vars]
+# KEY = "value"
