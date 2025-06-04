@@ -77,7 +77,7 @@ export default function ProfilePage() {
         <div className="bento-card profile-card">
           <div className="profile-header">
             <Avatar
-              src={user?.avatar || '/images/default-avatar.svg'}
+              src={user?.avatar || '/cafe-finder-frontend-v2/images/default-avatar.svg'}
               className="profile-avatar"
               alt={user?.name || 'User'}
             />
