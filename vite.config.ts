@@ -11,19 +11,25 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
-    // Use empty base for production, which works with both root and subdirectory deployments
-    base: isProduction ? '' : '/cafe-finder-frontend-v2',
+    // Use absolute paths for production to ensure assets are loaded correctly
+    base: isProduction ? '/' : '/',
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
       },
     },
+    // Ensure public directory is properly handled
+    publicDir: 'public',
     build: {
       outDir: 'dist',
       sourcemap: isProduction ? false : true, // Disable sourcemaps in production for smaller build
       minify: isProduction ? 'esbuild' : false,
+      // Ensure consistent file naming for better caching
       rollupOptions: {
         output: {
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]',
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
               if (id.includes('react') || id.includes('react-dom')) {
@@ -37,6 +43,10 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
+      // Ensure CSS is properly extracted and named
+      cssCodeSplit: true,
+      // Don't clear the output directory to prevent race conditions
+      emptyOutDir: !isProduction,
     },
     server: {
       port: 3000,
