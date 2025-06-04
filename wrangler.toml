@@ -1,21 +1,14 @@
 name = "cafe-finder-frontend"
 compatibility_date = "2024-06-04"
-main = "./dist/index.html"
 
 [build]
 command = "npm run build"
-publish = "./dist"
+publish = "dist"
 
-[build.upload]
-format = "modules"
-main = "./dist/assets/index-*.js"
+[site]
+bucket = "dist"
+entry-point = "dist"
 
 # Uncomment and configure these if you need environment variables
 # [vars]
 # KEY = "value"
-
-# Uncomment and configure these if you're using KV namespaces
-# [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "<YOUR_KV_NAMESPACE_ID>"
-# preview_id = "<YOUR_KV_PREVIEW_NAMESPACE_ID>"
