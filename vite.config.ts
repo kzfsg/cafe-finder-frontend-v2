@@ -10,13 +10,44 @@ export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
   
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        // Use the new JSX runtime
+        jsxRuntime: 'automatic',
+        // Babel configuration
+        babel: {
+          plugins: [
+            ['@babel/plugin-transform-react-jsx', { 
+              runtime: 'automatic',
+              importSource: 'react'
+            }]
+          ]
+        }
+      })
+    ],
     // Use absolute paths for production to ensure assets are loaded correctly
     base: isProduction ? '/' : '/',
     resolve: {
-      alias: {
-        '@': resolve(__dirname, 'src'),
-      },
+      alias: [
+        // Ensure single React instance
+        {
+          find: 'react',
+          replacement: resolve(__dirname, 'node_modules/react')
+        },
+        {
+          find: 'react-dom',
+          replacement: resolve(__dirname, 'node_modules/react-dom')
+        },
+        {
+          find: 'react-dom/client',
+          replacement: resolve(__dirname, 'node_modules/react-dom/client')
+        },
+        // Support for @/ imports
+        {
+          find: '@',
+          replacement: resolve(__dirname, 'src')
+        }
+      ]
     },
     // Ensure public directory is properly handled
     publicDir: 'public',
