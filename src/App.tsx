@@ -47,8 +47,6 @@ export const RoutesEnum = {
 
 // Main App component with providers
 function App() {
-  const location = useLocation();
-  
   const handleSearch = (query: string, filters: FilterOptions = {}) => {
     console.log('Search query in App:', query);
     console.log('Search filters in App:', filters);
@@ -90,49 +88,58 @@ function App() {
         <MantineProvider>
           <Notifications position="top-right" />
           <Router basename={import.meta.env.BASE_URL}>
-            <AuthProvider>
-              <div className="app">
-                <Navbar onSearch={handleSearch} currentPath={location.pathname} />
-                <main className="main-content">
-                  <TestComponent />
-                  <Routes>
-                    <Route path={RoutesEnum.Home} element={<HomePage />} />
-                    <Route 
-                      path={RoutesEnum.CafeDetails} 
-                      element={
-                        <CafeDetails 
-                          cafe={null as unknown as Cafe} 
-                          onClose={() => window.history.back()} 
-                        />
-                      } 
-                    />
-                    <Route 
-                      path={RoutesEnum.Bookmarks} 
-                      element={
-                        <ProtectedRoute>
-                          <BookmarkPage />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route path={RoutesEnum.Login} element={<Login />} />
-                    <Route path={RoutesEnum.SignUp} element={<SignUp />} />
-                    <Route 
-                      path={RoutesEnum.Profile} 
-                      element={
-                        <ProtectedRoute>
-                          <ProfilePage />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route path="*" element={<Navigate to={RoutesEnum.Home} replace />} />
-                  </Routes>
-                </main>
-              </div>
-            </AuthProvider>
+            <AppContent onSearch={handleSearch} />
           </Router>
         </MantineProvider>
       </QueryClientProvider>
     </StrictMode>
+  );
+}
+
+// Move the main content to a separate component that uses useLocation
+function AppContent({ onSearch }: { onSearch: (query: string, filters?: FilterOptions) => void }) {
+  const location = useLocation();
+  
+  return (
+    <AuthProvider>
+      <div className="app">
+        <Navbar onSearch={onSearch} currentPath={location.pathname} />
+        <main className="main-content">
+          <TestComponent />
+          <Routes>
+            <Route path={RoutesEnum.Home} element={<HomePage />} />
+            <Route 
+              path={RoutesEnum.CafeDetails} 
+              element={
+                <CafeDetails 
+                  cafe={null as unknown as Cafe} 
+                  onClose={() => window.history.back()} 
+                />
+              } 
+            />
+            <Route 
+              path={RoutesEnum.Bookmarks} 
+              element={
+                <ProtectedRoute>
+                  <BookmarkPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path={RoutesEnum.Login} element={<Login />} />
+            <Route path={RoutesEnum.SignUp} element={<SignUp />} />
+            <Route 
+              path={RoutesEnum.Profile} 
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="*" element={<Navigate to={RoutesEnum.Home} replace />} />
+          </Routes>
+        </main>
+      </div>
+    </AuthProvider>
   );
 }
 
