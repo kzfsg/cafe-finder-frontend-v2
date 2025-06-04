@@ -4,13 +4,7 @@ import type { Cafe } from '../data/cafes';
 import { transformCafeData } from './cafeService';
 import type { FilterOptions } from '../components/FilterDropdown';
 
-// Define interface for cafe location
-interface CafeLocation {
-  latitude: number;
-  longitude: number;
-  city?: string;
-  [key: string]: any;
-}
+
 
 // Extended location interface to match Supabase structure
 interface DBCafeLocation {
