@@ -65,7 +65,7 @@
 }
 
 .search-button {
-  background: #FF385C;
+  background: #d74f00;
   color: white;
   border: none;
   border-radius: 50%;
@@ -79,7 +79,7 @@
 }
 
 .search-button:hover {
-  background: #e32e4f;
+  background: #ea6f31;
 }
 
 .search-label {
