@@ -60,8 +60,20 @@ const itemVariants = {
 };
 
 const actionIconVariants = {
-  open: { scale: 1, y: 0 },
-  closed: { scale: 0, y: -7 },
+  open: { 
+    opacity: 1,
+    x: 0,
+    transition: {
+      opacity: { duration: 0.2 }
+    }
+  },
+  closed: { 
+    opacity: 0,
+    x: -5,
+    transition: {
+      opacity: { duration: 0.2 }
+    }
+  },
 };
 
 // Dropdown item component

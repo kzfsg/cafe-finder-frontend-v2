@@ -60,7 +60,7 @@
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
   padding: 10px 12px;
   border-radius: 6px;
@@ -72,6 +72,7 @@
   cursor: pointer;
   text-align: left;
   transition: background-color 0.2s ease;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .dropdown-item:hover {
@@ -79,10 +80,14 @@
 }
 
 .item-icon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #666;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-right: 4px; /* Add some spacing between icon and text */
 }
 
 /* Ensure consistent styling between button and link items */
@@ -91,4 +96,6 @@ a.dropdown-item {
   font-family: inherit;
   font-weight: normal;
   margin: 0;
+  display: flex;
+  align-items: center;
 }
