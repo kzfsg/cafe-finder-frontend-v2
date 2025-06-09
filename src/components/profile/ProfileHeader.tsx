@@ -11,11 +11,13 @@ export default function ProfileHeader({ user, reviewCount }: ProfileHeaderProps)
   return (
     <div className="bento-card profile-card">
       <div className="profile-header">
-        <Avatar
-          src={user?.avatar || '/cafe-finder-frontend-v2/images/default-avatar.svg'}
-          className="profile-avatar"
-          alt={user?.name || 'User'}
-        />
+        <div className="profile-avatar-container">
+          <Avatar
+            src={user?.avatar || '/cafe-finder-frontend-v2/images/default-avatar.svg'}
+            className="profile-avatar"
+            alt={user?.name || 'User'}
+          />
+        </div>
         <div className="profile-info">
           <h2 className="profile-name">{user?.name || 'User'}</h2>
           <Text color="dimmed" className="profile-occupation">UX Designer</Text>
