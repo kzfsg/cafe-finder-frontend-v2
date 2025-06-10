@@ -11,6 +11,7 @@ import Login from './components/auth/Login';
 import SignUp from './components/auth/SignUp';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { Cafe } from './data/cafes';
+import ClickSpark from './components/ClickSpark';
 import './App.css';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
@@ -74,46 +75,49 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
         <Notifications position="top-right" />
-        <Router>
-          <AuthProvider>
-            <div className="app">
-              <Navbar onSearch={handleSearch} />
-              <main className="main-content">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route 
-                    path="/cafes/:id" 
-                    element={
-                      <CafeDetails 
-                        cafe={null as unknown as Cafe} 
-                        onClose={() => window.history.back()} 
-                      />
-                    } 
-                  />
-                  <Route 
-                    path="/bookmarks" 
-                    element={
-                      <ProtectedRoute>
-                        <BookmarkPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route 
-                    path="/profile" 
-                    element={
-                      <ProtectedRoute>
-                        <ProfilePage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-              </main>
-            </div>
-          </AuthProvider>
-        </Router>
+        <ClickSpark
+        >
+          <Router>
+            <AuthProvider>
+              <div className="app">
+                <Navbar onSearch={handleSearch} />
+                <main className="main-content">
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route 
+                      path="/cafes/:id" 
+                      element={
+                        <CafeDetails 
+                          cafe={null as unknown as Cafe} 
+                          onClose={() => window.history.back()} 
+                        />
+                      } 
+                    />
+                    <Route 
+                      path="/bookmarks" 
+                      element={
+                        <ProtectedRoute>
+                          <BookmarkPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route 
+                      path="/profile" 
+                      element={
+                        <ProtectedRoute>
+                          <ProfilePage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="*" element={<Navigate to="/" />} />
+                  </Routes>
+                </main>
+              </div>
+            </AuthProvider>
+          </Router>
+        </ClickSpark>
       </MantineProvider>
     </QueryClientProvider>
   );
